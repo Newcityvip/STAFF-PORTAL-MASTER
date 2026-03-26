@@ -12,13 +12,15 @@
       <div class="header-row">
         <div>
           <h1>Staff Portal</h1>
-          <p class="sub">Today shift, attendance status, check in, and check out.</p>
+          <p class="sub">Today shift, attendance status, live score, and performance tracking.</p>
         </div>
         <div class="right-actions">
           <div class="status-pill" id="apiStatus">API: Checking...</div>
           <button type="button" class="small-btn secondary-btn" id="logoutBtn">Logout</button>
         </div>
       </div>
+
+      <div id="accessBanner" class="mini-access-banner">Checking office access...</div>
 
       <div class="summary-grid">
         <div class="summary-box">
@@ -65,6 +67,34 @@
         </div>
       </div>
 
+      <div class="panel">
+        <div class="panel-title-row">
+          <h3>Live Performance Score</h3>
+          <span class="mini-pill" id="liveScoreMonth">Live</span>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-box">
+            <span class="summary-label">Attendance Score</span>
+            <strong id="attendanceScore">-</strong>
+          </div>
+          <div class="summary-box">
+            <span class="summary-label">KPI Score</span>
+            <strong id="kpiScore">-</strong>
+          </div>
+          <div class="summary-box">
+            <span class="summary-label">Final Score</span>
+            <strong id="finalScore">-</strong>
+          </div>
+          <div class="summary-box">
+            <span class="summary-label">Rating</span>
+            <strong id="ratingLabel">-</strong>
+          </div>
+        </div>
+
+        <div class="help" id="scoreNote">Attendance 40% + KPI 60% = Final Score</div>
+      </div>
+
       <div class="action-grid">
         <button id="checkInBtn">Check In</button>
         <button id="checkOutBtn" class="btn-dark">Check Out</button>
@@ -75,6 +105,26 @@
           <h3>Today Attendance</h3>
           <span class="mini-pill mini-pill-muted" id="attendanceState">Waiting...</span>
         </div>
+
+        <div class="summary-grid">
+          <div class="summary-box">
+            <span class="summary-label">Check In</span>
+            <strong id="todayCheckIn">-</strong>
+          </div>
+          <div class="summary-box">
+            <span class="summary-label">Check Out</span>
+            <strong id="todayCheckOut">-</strong>
+          </div>
+          <div class="summary-box">
+            <span class="summary-label">Status</span>
+            <strong id="todayStatus">-</strong>
+          </div>
+          <div class="summary-box">
+            <span class="summary-label">Late Minutes</span>
+            <strong id="todayLateMinutes">-</strong>
+          </div>
+        </div>
+
         <pre id="attendanceBox">Loading attendance status...</pre>
       </div>
 
