@@ -1,18 +1,87 @@
 const API_BASE = "https://staff-portal-proxy.mdrobiulislam.workers.dev";
 
-const apiStatus = document.getElementById("apiStatus");
-const logoutBtn = document.getElementById("logoutBtn");
-const checkInBtn = document.getElementById("checkInBtn");
-const checkOutBtn = document.getElementById("checkOutBtn");
-const resultBox = document.getElementById("resultBox");
-const attendanceBox = document.getElementById("attendanceBox");
-const attendanceState = document.getElementById("attendanceState");
-const shiftStatusPill = document.getElementById("shiftStatusPill");
+/* ========= ELEMENT HELPERS ========= */
+function el(...ids) {
+  for (const id of ids) {
+    const node = document.getElementById(id);
+    if (node) return node;
+  }
+  return null;
+}
+
+const apiStatus = el("apiStatus");
+const logoutBtn = el("logoutBtn");
+const checkInBtn = el("checkInBtn");
+const checkOutBtn = el("checkOutBtn");
+
+const resultBox = el("resultMessage", "resultBox");
+const attendanceBox = el("attendanceMessage", "attendanceBox");
+const attendanceState = el("attendanceState");
+const shiftStatusPill = el("shiftStatusPill");
+
+const todayCheckInEl = el("todayCheckIn");
+const todayCheckOutEl = el("todayCheckOut");
+const todayStatusEl = el("todayStatus");
+const todayLateMinutesEl = el("todayLateMinutes");
+
+const attendanceScoreEl = el("attendanceScore", "attendanceScoreValue");
+const kpiScoreEl = el("kpiScore", "kpiScoreValue");
+const finalScoreEl = el("finalScore", "finalScoreValue");
+const ratingLabelEl = el("ratingLabel", "ratingLabelValue");
+const scoreUpdatedTagEl = el("scoreUpdatedTag", "liveScoreMonth");
+const scoreNoteEl = el("scoreNote");
+
+const accessBanner = el("accessBanner");
 
 let currentStaff = null;
 let currentShift = null;
 let todayLogs = [];
+let portalClientIp = localStorage.getItem("staffPortalClientIp") || "";
 
+/* ========= BASIC HELPERS ========= */
+function setText(node, value) {
+  if (!node) return;
+  node.textContent = value == null || value === "" ? "-" : String(value);
+}
+
+function showResult(message, isError = false) {
+  if (!resultBox) return;
+  resultBox.textContent = message || (isError ? "Action failed." : "Done.");
+  if (resultBox.classList) {
+    resultBox.classList.toggle("success-box", !isError);
+    resultBox.classList.toggle("error-box", isError);
+    resultBox.classList.toggle("success-message", !isError);
+  }
+}
+
+function showAttendanceMessage(message) {
+  if (attendanceBox) {
+    attendanceBox.textContent = message || "No attendance action found for today.";
+  }
+}
+
+function toUpper(v) {
+  return String(v || "").trim().toUpperCase();
+}
+
+function formatTimeFromDateTime(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "-";
+
+  const m = raw.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2})(?::\d{2})?$/);
+  if (m) {
+    let hh = Number(m[2]);
+    const mm = m[3];
+    const ap = hh >= 12 ? "PM" : "AM";
+    if (hh === 0) hh = 12;
+    else if (hh > 12) hh -= 12;
+    return `${hh}:${mm} ${ap}`;
+  }
+
+  return raw;
+}
+
+/* ========= SESSION ========= */
 function requireStaffSession() {
   const raw = localStorage.getItem("staffPortalStaff");
   if (!raw) {
@@ -38,19 +107,24 @@ function requireStaffSession() {
 }
 
 function fillStaffCard() {
-  document.getElementById("staffName").textContent = currentStaff.full_name || "-";
-  document.getElementById("staffLoginIdView").textContent = currentStaff.login_id || "-";
-  document.getElementById("staffTeam").textContent = currentStaff.team || "-";
-  document.getElementById("staffRole").textContent = currentStaff.role || "-";
+  setText(el("staffName"), currentStaff.full_name);
+  setText(el("staffLoginIdView"), currentStaff.login_id);
+  setText(el("staffTeam"), currentStaff.team);
+  setText(el("staffRole"), currentStaff.role);
 }
 
+/* ========= API ========= */
 async function checkApi() {
   try {
     const res = await fetch(`${API_BASE}?action=health`);
     const data = await res.json();
-    apiStatus.textContent = data.ok ? `API: Online (${data.version})` : "API: Error";
+    if (apiStatus) {
+      apiStatus.textContent = data.ok
+        ? `API: Online (${data.version || "OK"})`
+        : "API: Error";
+    }
   } catch (err) {
-    apiStatus.textContent = "API: Offline";
+    if (apiStatus) apiStatus.textContent = "API: Offline";
   }
 }
 
@@ -70,139 +144,286 @@ async function postJson(payload) {
   return res.json();
 }
 
+/* ========= OPTIONAL IP CHECK =========
+   This expects worker endpoint:
+   ?action=portalAccess
+*/
+async function checkPortalAccess() {
+  try {
+    const res = await fetch(`${API_BASE}?action=portalAccess`);
+    const data = await res.json();
+
+    if (data && data.client_ip) {
+      portalClientIp = data.client_ip;
+      localStorage.setItem("staffPortalClientIp", portalClientIp);
+    }
+
+    if (accessBanner) {
+      if (data && data.allowed === true) {
+        accessBanner.textContent = `Office IP allowed (${portalClientIp || "-"})`;
+      } else if (data && data.allowed === false) {
+        accessBanner.textContent = `Access blocked (${portalClientIp || "-"})`;
+      }
+    }
+
+    if (data && data.allowed === false) {
+      document.body.innerHTML = `
+        <div class="page">
+          <div class="card">
+            <h2>Access Blocked</h2>
+            <p>This portal can be opened only from allowed office IP addresses.</p>
+            <p>Current IP: ${portalClientIp || "-"}</p>
+          </div>
+        </div>
+      `;
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    if (accessBanner) {
+      accessBanner.textContent = "IP check unavailable";
+    }
+    return true;
+  }
+}
+
+/* ========= TODAY SHIFT ========= */
 async function loadTodayShift() {
-  const data = await getJson(`${API_BASE}?action=todayShift&login_id=${encodeURIComponent(currentStaff.login_id)}`);
+  const data = await getJson(
+    `${API_BASE}?action=todayShift&login_id=${encodeURIComponent(currentStaff.login_id)}`
+  );
+
   if (!data.ok) {
-    shiftStatusPill.textContent = "Shift Error";
-    resultBox.textContent = JSON.stringify(data, null, 2);
+    if (shiftStatusPill) shiftStatusPill.textContent = "Shift Error";
+    showResult(data.error || "Could not load today shift.", true);
     return;
   }
 
   currentShift = data.data || {};
-  document.getElementById("shiftDate").textContent = currentShift.date || "-";
-  document.getElementById("shiftCode").textContent = currentShift.shift_code || "-";
-  document.getElementById("shiftStart").textContent = currentShift.scheduled_start || "-";
-  document.getElementById("shiftEnd").textContent = currentShift.scheduled_end || "-";
+  setText(el("shiftDate"), currentShift.date);
+  setText(el("shiftCode"), currentShift.shift_code);
+  setText(el("shiftStart"), currentShift.scheduled_start);
+  setText(el("shiftEnd"), currentShift.scheduled_end);
 
   if (currentShift.is_off_day) {
-    shiftStatusPill.textContent = "OFF DAY";
+    if (shiftStatusPill) shiftStatusPill.textContent = "OFF DAY";
   } else if (currentShift.is_leave_day) {
-    shiftStatusPill.textContent = "LEAVE";
+    if (shiftStatusPill) shiftStatusPill.textContent = "LEAVE";
   } else {
-    shiftStatusPill.textContent = "WORKING DAY";
+    if (shiftStatusPill) shiftStatusPill.textContent = "WORKING DAY";
   }
 }
 
+/* ========= ATTENDANCE ========= */
 function buildAttendanceSummary(logs) {
   if (!logs || !logs.length) {
-    attendanceState.textContent = "No logs yet";
+    if (attendanceState) attendanceState.textContent = "No logs yet";
+
+    setText(todayCheckInEl, "-");
+    setText(todayCheckOutEl, "-");
+    setText(todayStatusEl, "-");
+    setText(todayLateMinutesEl, "-");
+
     return "No attendance action found for today.";
   }
 
-  const checkIn = logs.find(x => String(x.action_type || "").toUpperCase() === "CHECK_IN");
-  const checkOut = logs.find(x => String(x.action_type || "").toUpperCase() === "CHECK_OUT");
+  const checkIn = logs.find(x => toUpper(x.action_type) === "CHECK_IN");
+  const checkOut = logs.find(x => toUpper(x.action_type) === "CHECK_OUT");
 
   if (checkIn && checkOut) {
-    attendanceState.textContent = "Checked In + Out";
+    if (attendanceState) attendanceState.textContent = "Checked In + Out";
   } else if (checkIn) {
-    attendanceState.textContent = "Checked In";
+    if (attendanceState) attendanceState.textContent = "Checked In";
   } else {
-    attendanceState.textContent = "No logs yet";
+    if (attendanceState) attendanceState.textContent = "No logs yet";
   }
 
-  return JSON.stringify(logs, null, 2);
+  const checkInTime = checkIn ? formatTimeFromDateTime(checkIn.actual_time || checkIn.timestamp) : "-";
+  const checkOutTime = checkOut ? formatTimeFromDateTime(checkOut.actual_time || checkOut.timestamp) : "-";
+  const statusFlag = checkIn ? (checkIn.status_flag || "ON_TIME") : "-";
+  const lateMinutes = checkIn ? (checkIn.minutes_diff || 0) : "-";
+
+  setText(todayCheckInEl, checkInTime);
+  setText(todayCheckOutEl, checkOutTime);
+  setText(todayStatusEl, statusFlag);
+  setText(todayLateMinutesEl, lateMinutes);
+
+  if (!checkIn) return "No attendance action found for today.";
+
+  let msg = `Checked in at ${checkInTime}`;
+  if (toUpper(statusFlag) === "LATE") {
+    msg += ` (${lateMinutes} mins late)`;
+  } else if (toUpper(statusFlag) === "ON_TIME") {
+    msg += ` (On time)`;
+  }
+
+  if (checkOut) {
+    msg += `. Checked out at ${checkOutTime}.`;
+  } else {
+    msg += `. Check-out pending.`;
+  }
+
+  return msg;
 }
 
 function refreshButtonState() {
-  const checkIn = todayLogs.find(x => String(x.action_type || "").toUpperCase() === "CHECK_IN");
-  const checkOut = todayLogs.find(x => String(x.action_type || "").toUpperCase() === "CHECK_OUT");
+  const checkIn = todayLogs.find(x => toUpper(x.action_type) === "CHECK_IN");
+  const checkOut = todayLogs.find(x => toUpper(x.action_type) === "CHECK_OUT");
 
   if (currentShift?.is_off_day || currentShift?.is_leave_day) {
-    checkInBtn.disabled = true;
-    checkOutBtn.disabled = true;
+    if (checkInBtn) checkInBtn.disabled = true;
+    if (checkOutBtn) checkOutBtn.disabled = true;
     return;
   }
 
-  checkInBtn.disabled = !!checkIn;
-  checkOutBtn.disabled = !checkIn || !!checkOut;
+  if (checkInBtn) checkInBtn.disabled = !!checkIn;
+  if (checkOutBtn) checkOutBtn.disabled = !checkIn || !!checkOut;
 }
 
 async function loadAttendance() {
-  const data = await getJson(`${API_BASE}?action=myAttendance&login_id=${encodeURIComponent(currentStaff.login_id)}`);
+  const data = await getJson(
+    `${API_BASE}?action=myAttendance&login_id=${encodeURIComponent(currentStaff.login_id)}`
+  );
+
   if (!data.ok) {
-    attendanceState.textContent = "Load Error";
-    attendanceBox.textContent = JSON.stringify(data, null, 2);
+    if (attendanceState) attendanceState.textContent = "Load Error";
+    showAttendanceMessage(data.error || "Could not load attendance.");
     return;
   }
 
   todayLogs = data.logs || [];
-  attendanceBox.textContent = buildAttendanceSummary(todayLogs);
+  const humanMessage = buildAttendanceSummary(todayLogs);
+  showAttendanceMessage(humanMessage);
   refreshButtonState();
 }
 
+/* ========= SCORE ========= */
+async function loadPerformanceScore() {
+  try {
+    const data = await getJson(
+      `${API_BASE}?action=performanceScore&login_id=${encodeURIComponent(currentStaff.login_id)}`
+    );
+
+    if (!data.ok) {
+      setText(attendanceScoreEl, "-");
+      setText(kpiScoreEl, "-");
+      setText(finalScoreEl, "-");
+      setText(ratingLabelEl, data.error || "-");
+      if (scoreNoteEl) scoreNoteEl.textContent = "Could not load performance score.";
+      return;
+    }
+
+    const score = data.data || {};
+    setText(attendanceScoreEl, score.attendance_score);
+    setText(kpiScoreEl, score.kpi_score);
+    setText(finalScoreEl, score.final_score);
+    setText(ratingLabelEl, score.rating_label);
+
+    if (scoreUpdatedTagEl) {
+      if (score.score_month) scoreUpdatedTagEl.textContent = score.score_month;
+      else scoreUpdatedTagEl.textContent = "Live";
+    }
+
+    if (scoreNoteEl) {
+      const aw = score.attendance_weight ?? 40;
+      const kw = score.kpi_weight ?? 60;
+      scoreNoteEl.textContent = `Attendance ${aw}% + KPI ${kw}% = Final Score`;
+    }
+  } catch (err) {
+    setText(attendanceScoreEl, "-");
+    setText(kpiScoreEl, "-");
+    setText(finalScoreEl, "-");
+    setText(ratingLabelEl, "-");
+    if (scoreNoteEl) scoreNoteEl.textContent = "Could not load performance score.";
+  }
+}
+
+/* ========= ACTIONS ========= */
 function getDeviceInfo() {
   return navigator.userAgent || "Browser";
 }
 
 async function handleCheckIn() {
-  checkInBtn.disabled = true;
-  resultBox.textContent = "Sending check-in...";
+  if (checkInBtn) checkInBtn.disabled = true;
+  showResult("Sending check-in...");
+
   try {
     const data = await postJson({
       action: "checkIn",
       login_id: currentStaff.login_id,
       source: "STAFF_PORTAL_WEB",
-      office_ip: "",
+      office_ip: portalClientIp || "",
       device_info: getDeviceInfo(),
       remarks: ""
     });
 
-    resultBox.textContent = JSON.stringify(data, null, 2);
+    if (data.ok) {
+      showResult(data.ui_message || data.message || "Check-in successful.");
+    } else {
+      showResult(data.error || "Check-in failed.", true);
+    }
+
     await loadAttendance();
+    await loadPerformanceScore();
   } catch (err) {
-    resultBox.textContent = "ERROR:\n" + (err?.message || err);
+    showResult("Check-in failed: " + (err?.message || err), true);
   } finally {
     refreshButtonState();
   }
 }
 
 async function handleCheckOut() {
-  checkOutBtn.disabled = true;
-  resultBox.textContent = "Sending check-out...";
+  if (checkOutBtn) checkOutBtn.disabled = true;
+  showResult("Sending check-out...");
+
   try {
     const data = await postJson({
       action: "checkOut",
       login_id: currentStaff.login_id,
       source: "STAFF_PORTAL_WEB",
-      office_ip: "",
+      office_ip: portalClientIp || "",
       device_info: getDeviceInfo(),
       remarks: ""
     });
 
-    resultBox.textContent = JSON.stringify(data, null, 2);
+    if (data.ok) {
+      showResult(data.ui_message || data.message || "Check-out successful.");
+    } else {
+      showResult(data.error || "Check-out failed.", true);
+    }
+
     await loadAttendance();
+    await loadPerformanceScore();
   } catch (err) {
-    resultBox.textContent = "ERROR:\n" + (err?.message || err);
+    showResult("Check-out failed: " + (err?.message || err), true);
   } finally {
     refreshButtonState();
   }
 }
 
+/* ========= LOGOUT ========= */
 function logout() {
   localStorage.removeItem("staffPortalStaff");
   window.location.href = "index.html";
 }
 
+/* ========= INIT ========= */
 async function init() {
   if (!requireStaffSession()) return;
+
+  const allowed = await checkPortalAccess();
+  if (!allowed) return;
+
   fillStaffCard();
   await checkApi();
   await loadTodayShift();
   await loadAttendance();
+  await loadPerformanceScore();
 }
 
-logoutBtn.addEventListener("click", logout);
-checkInBtn.addEventListener("click", handleCheckIn);
-checkOutBtn.addEventListener("click", handleCheckOut);
+if (logoutBtn) logoutBtn.addEventListener("click", logout);
+if (checkInBtn) checkInBtn.addEventListener("click", handleCheckIn);
+if (checkOutBtn) checkOutBtn.addEventListener("click", handleCheckOut);
 
 init();
