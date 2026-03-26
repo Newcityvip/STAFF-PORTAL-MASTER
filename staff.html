@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staff Portal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="card dashboard-card">
+      <div class="header-row">
+        <div>
+          <h1>Staff Portal</h1>
+          <p class="sub">Today shift, attendance status, check in, and check out.</p>
+        </div>
+        <div class="right-actions">
+          <div class="status-pill" id="apiStatus">API: Checking...</div>
+          <button type="button" class="small-btn secondary-btn" id="logoutBtn">Logout</button>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-box">
+          <span class="summary-label">Staff Name</span>
+          <strong id="staffName">-</strong>
+        </div>
+        <div class="summary-box">
+          <span class="summary-label">Login ID</span>
+          <strong id="staffLoginIdView">-</strong>
+        </div>
+        <div class="summary-box">
+          <span class="summary-label">Team</span>
+          <strong id="staffTeam">-</strong>
+        </div>
+        <div class="summary-box">
+          <span class="summary-label">Role</span>
+          <strong id="staffRole">-</strong>
+        </div>
+      </div>
+
+      <div class="panel shift-panel">
+        <div class="panel-title-row">
+          <h3>Today Shift</h3>
+          <span class="mini-pill" id="shiftStatusPill">Loading...</span>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-box">
+            <span class="summary-label">Date</span>
+            <strong id="shiftDate">-</strong>
+          </div>
+          <div class="summary-box">
+            <span class="summary-label">Shift Code</span>
+            <strong id="shiftCode">-</strong>
+          </div>
+          <div class="summary-box">
+            <span class="summary-label">Start Time</span>
+            <strong id="shiftStart">-</strong>
+          </div>
+          <div class="summary-box">
+            <span class="summary-label">End Time</span>
+            <strong id="shiftEnd">-</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-grid">
+        <button id="checkInBtn">Check In</button>
+        <button id="checkOutBtn" class="btn-dark">Check Out</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title-row">
+          <h3>Today Attendance</h3>
+          <span class="mini-pill mini-pill-muted" id="attendanceState">Waiting...</span>
+        </div>
+        <pre id="attendanceBox">Loading attendance status...</pre>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title-row">
+          <h3>Latest Action Result</h3>
+        </div>
+        <pre id="resultBox">No action yet.</pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="staff.js"></script>
+</body>
+</html>
