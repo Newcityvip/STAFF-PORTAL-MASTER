@@ -144,10 +144,7 @@ async function postJson(payload) {
   return res.json();
 }
 
-/* ========= OPTIONAL IP CHECK =========
-   This expects worker endpoint:
-   ?action=portalAccess
-*/
+/* ========= OPTIONAL IP CHECK ========= */
 async function checkPortalAccess() {
   try {
     const res = await fetch(`${API_BASE}?action=portalAccess`);
@@ -249,53 +246,38 @@ function buildAttendanceSummary(logs) {
   setText(todayStatusEl, statusFlag);
   setText(todayLateMinutesEl, lateMinutes);
 
-  if (!checkIn) return "No attendance action found for today.";
+  return [
+    `Check In : ${checkInTime}`,
+    `Check Out: ${checkOutTime}`,
+    `Status   : ${statusFlag}`,
+    `Late Min : ${lateMinutes}`
+  ].join("\\n");
+}
 
-  let msg = `Checked in at ${checkInTime}`;
-  if (toUpper(statusFlag) === "LATE") {
-    msg += ` (${lateMinutes} mins late)`;
-  } else if (toUpper(statusFlag) === "ON_TIME") {
-    msg += ` (On time)`;
+async function loadAttendance() {
+  try {
+    const data = await getJson(
+      `${API_BASE}?action=todayAttendance&login_id=${encodeURIComponent(currentStaff.login_id)}`
+    );
+
+    if (!data.ok) {
+      showAttendanceMessage(data.error || "Could not load attendance.");
+      return;
+    }
+
+    todayLogs = data.logs || data.data || [];
+    showAttendanceMessage(buildAttendanceSummary(todayLogs));
+  } catch (err) {
+    showAttendanceMessage("Could not load attendance.");
   }
-
-  if (checkOut) {
-    msg += `. Checked out at ${checkOutTime}.`;
-  } else {
-    msg += `. Check-out pending.`;
-  }
-
-  return msg;
 }
 
 function refreshButtonState() {
   const checkIn = todayLogs.find(x => toUpper(x.action_type) === "CHECK_IN");
   const checkOut = todayLogs.find(x => toUpper(x.action_type) === "CHECK_OUT");
 
-  if (currentShift?.is_off_day || currentShift?.is_leave_day) {
-    if (checkInBtn) checkInBtn.disabled = true;
-    if (checkOutBtn) checkOutBtn.disabled = true;
-    return;
-  }
-
   if (checkInBtn) checkInBtn.disabled = !!checkIn;
   if (checkOutBtn) checkOutBtn.disabled = !checkIn || !!checkOut;
-}
-
-async function loadAttendance() {
-  const data = await getJson(
-    `${API_BASE}?action=myAttendance&login_id=${encodeURIComponent(currentStaff.login_id)}`
-  );
-
-  if (!data.ok) {
-    if (attendanceState) attendanceState.textContent = "Load Error";
-    showAttendanceMessage(data.error || "Could not load attendance.");
-    return;
-  }
-
-  todayLogs = data.logs || [];
-  const humanMessage = buildAttendanceSummary(todayLogs);
-  showAttendanceMessage(humanMessage);
-  refreshButtonState();
 }
 
 /* ========= SCORE ========= */
@@ -416,14 +398,17 @@ async function init() {
   if (!allowed) return;
 
   fillStaffCard();
-  await checkApi();
+  checkApi();
+
   await loadTodayShift();
   await loadAttendance();
   await loadPerformanceScore();
-}
 
-if (logoutBtn) logoutBtn.addEventListener("click", logout);
-if (checkInBtn) checkInBtn.addEventListener("click", handleCheckIn);
-if (checkOutBtn) checkOutBtn.addEventListener("click", handleCheckOut);
+  refreshButtonState();
+
+  if (checkInBtn) checkInBtn.addEventListener("click", handleCheckIn);
+  if (checkOutBtn) checkOutBtn.addEventListener("click", handleCheckOut);
+  if (logoutBtn) logoutBtn.addEventListener("click", logout);
+}
 
 init();
