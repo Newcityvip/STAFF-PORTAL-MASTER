@@ -4,6 +4,16 @@ const apiStatus = document.getElementById("apiStatus");
 const uploadBtn = document.getElementById("uploadBtn");
 const resultBox = document.getElementById("resultBox");
 const csvFileInput = document.getElementById("csvFile");
+const adminLogoutBtn = document.getElementById("adminLogoutBtn");
+
+function requireAdminSession() {
+  const raw = localStorage.getItem("staffPortalAdmin");
+  if (!raw) {
+    window.location.href = "index.html";
+    return false;
+  }
+  return true;
+}
 
 async function checkApi() {
   try {
@@ -76,5 +86,13 @@ async function uploadCsv() {
   }
 }
 
-uploadBtn.addEventListener("click", uploadCsv);
-checkApi();
+function logoutAdmin() {
+  localStorage.removeItem("staffPortalAdmin");
+  window.location.href = "index.html";
+}
+
+if (requireAdminSession()) {
+  uploadBtn.addEventListener("click", uploadCsv);
+  adminLogoutBtn.addEventListener("click", logoutAdmin);
+  checkApi();
+}
