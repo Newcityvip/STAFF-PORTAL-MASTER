@@ -1,4 +1,4 @@
-const API_BASE = "https://script.google.com/macros/s/AKfycbyOaO0Rnsl0QFEA5Q-YZCeABkVzoUk6ttqkDR5RLjqqdNoFqLKptnXZ2iLAIi5xujUp3w/exec";
+const API_BASE = "https://script.google.com/macros/s/AKfycbw_SqYD8mRiv5cinA9lmzFIiH03nGmt0KonVom9x0Cx1V4GZ5lqachqWVTsMhz1gfD4hw/exec";
 
 const apiStatus = document.getElementById("apiStatus");
 const uploadBtn = document.getElementById("uploadBtn");
