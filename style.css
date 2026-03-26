@@ -47,7 +47,7 @@ body {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .brand-badge {
@@ -65,7 +65,8 @@ body {
 .portal-grid,
 .grid-2,
 .summary-grid,
-.action-grid {
+.action-grid,
+.simple-attendance-grid {
   display: grid;
   gap: 16px;
 }
@@ -82,6 +83,11 @@ body {
 .action-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 18px;
+}
+
+.simple-attendance-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 14px;
 }
 
 .auth-card {
@@ -120,7 +126,7 @@ body {
 }
 
 .header-row {
-  align-items: start;
+  align-items: flex-start;
   margin-bottom: 22px;
 }
 
@@ -140,9 +146,15 @@ h2 {
   font-size: 24px;
 }
 
+h3 {
+  margin: 0;
+  font-size: 28px;
+}
+
 .sub {
   margin: 0;
   color: #6b7280;
+  line-height: 1.5;
 }
 
 .status-pill,
@@ -198,6 +210,15 @@ input[type="file"] {
   border-radius: 12px;
   font-size: 15px;
   background: #fff;
+  outline: none;
+}
+
+input[type="month"]:focus,
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="file"]:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .auth-card-admin input[type="text"],
@@ -207,7 +228,8 @@ input[type="file"] {
 }
 
 .help,
-.inline-status {
+.inline-status,
+.small-note {
   margin-top: 8px;
   font-size: 13px;
   color: #6b7280;
@@ -232,6 +254,7 @@ button {
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
+  transition: 0.2s ease;
 }
 
 button:hover {
@@ -267,7 +290,10 @@ button:disabled {
 }
 
 .panel,
-.summary-box {
+.summary-box,
+.mini-box,
+.notice-box,
+.blocked-box {
   background: #f8fafc;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
@@ -275,7 +301,8 @@ button:disabled {
   margin-top: 18px;
 }
 
-.summary-box {
+.summary-box,
+.mini-box {
   margin-top: 0;
 }
 
@@ -284,6 +311,12 @@ button:disabled {
   font-size: 13px;
   color: #6b7280;
   margin-bottom: 8px;
+}
+
+.summary-box strong,
+.mini-box strong {
+  font-size: 16px;
+  color: #111827;
 }
 
 .panel h3 {
@@ -295,6 +328,7 @@ button:disabled {
   margin: 0;
   padding-left: 18px;
   color: #4b5563;
+  line-height: 1.6;
 }
 
 pre {
@@ -305,8 +339,62 @@ pre {
   line-height: 1.5;
 }
 
+.notice-box {
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.success-box,
+.success-message {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.error-box {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.access-banner {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.compact-banner {
+  margin-top: 4px;
+}
+
+.blocked-box {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #9a3412;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.score-box strong,
+.highlight-box strong {
+  font-size: 24px;
+}
+
+.highlight-box {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
 @media (max-width: 900px) {
-  .summary-grid {
+  .summary-grid,
+  .simple-attendance-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -315,7 +403,8 @@ pre {
   .portal-grid,
   .grid-2,
   .summary-grid,
-  .action-grid {
+  .action-grid,
+  .simple-attendance-grid {
     grid-template-columns: 1fr;
   }
 
@@ -346,5 +435,15 @@ pre {
 
   .small-btn {
     width: 100%;
+  }
+
+  .summary-box strong,
+  .mini-box strong {
+    font-size: 15px;
+  }
+
+  .score-box strong,
+  .highlight-box strong {
+    font-size: 22px;
   }
 }
