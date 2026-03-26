@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Staff Portal - Admin Schedule Upload</title>
+  <title>Staff Portal - Admin Control Center</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -11,8 +11,8 @@
     <div class="card">
       <div class="header-row">
         <div>
-          <h1>Admin Schedule Upload</h1>
-          <p class="sub">Upload monthly roster CSV into the staff portal system.</p>
+          <h1>Admin Control Center</h1>
+          <p class="sub">Upload roster, manage KPI, and monitor monthly performance leaderboard.</p>
         </div>
         <div class="right-actions">
           <div class="status-pill" id="apiStatus">API: Checking...</div>
@@ -20,26 +20,104 @@
         </div>
       </div>
 
-      <div class="grid-2">
-        <div class="field">
-          <label for="uploadMonth">Upload Month</label>
-          <input type="month" id="uploadMonth" value="2026-04" />
+      <div class="panel">
+        <div class="panel-title-row">
+          <h3>Monthly Roster Upload</h3>
+          <span class="mini-pill">CSV</span>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="uploadMonth">Upload Month</label>
+            <input type="month" id="uploadMonth" value="2026-04" />
+          </div>
+
+          <div class="field">
+            <label for="uploadedBy">Uploaded By</label>
+            <input type="text" id="uploadedBy" value="ADMIN" />
+          </div>
         </div>
 
         <div class="field">
-          <label for="uploadedBy">Uploaded By</label>
-          <input type="text" id="uploadedBy" value="ADMIN" />
+          <label for="csvFile">Roster CSV File</label>
+          <input type="file" id="csvFile" accept=".csv" />
+          <div class="help">Export your roster as CSV and upload it here.</div>
+        </div>
+
+        <div class="actions">
+          <button id="uploadBtn">Upload Schedule CSV</button>
         </div>
       </div>
 
-      <div class="field">
-        <label for="csvFile">Roster CSV File</label>
-        <input type="file" id="csvFile" accept=".csv" />
-        <div class="help">Export your roster as CSV and upload it here.</div>
+      <div class="panel">
+        <div class="panel-title-row">
+          <h3>KPI Score Entry</h3>
+          <span class="mini-pill">Live Score</span>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="scoreMonth">Score Month</label>
+            <input type="month" id="scoreMonth" />
+          </div>
+
+          <div class="field">
+            <label for="staffIdInput">Staff ID / Login ID</label>
+            <input type="text" id="staffIdInput" placeholder="e.g. ST001 or login id" />
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="field">
+            <label for="leadershipInput">Leadership</label>
+            <input type="number" step="0.1" min="0" max="5" id="leadershipInput" placeholder="0 - 5" />
+          </div>
+          <div class="field">
+            <label for="effectivenessInput">Effectiveness</label>
+            <input type="number" step="0.1" min="0" max="5" id="effectivenessInput" placeholder="0 - 5" />
+          </div>
+          <div class="field">
+            <label for="problemSolvingInput">Problem Solving</label>
+            <input type="number" step="0.1" min="0" max="5" id="problemSolvingInput" placeholder="0 - 5" />
+          </div>
+          <div class="field">
+            <label for="communicationInput">Communication</label>
+            <input type="number" step="0.1" min="0" max="5" id="communicationInput" placeholder="0 - 5" />
+          </div>
+          <div class="field">
+            <label for="productivityInput">Productivity</label>
+            <input type="number" step="0.1" min="0" max="5" id="productivityInput" placeholder="0 - 5" />
+          </div>
+          <div class="field">
+            <label for="initiativeInput">Initiative</label>
+            <input type="number" step="0.1" min="0" max="5" id="initiativeInput" placeholder="0 - 5" />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="penaltyInput">Penalty</label>
+            <input type="number" step="0.1" min="0" max="5" id="penaltyInput" placeholder="0 if none" />
+          </div>
+
+          <div class="field">
+            <label for="kpiNoteInput">Note</label>
+            <input type="text" id="kpiNoteInput" placeholder="Optional note / reason" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="saveKpiBtn">Save KPI Score</button>
+          <button id="refreshLeaderboardBtn" type="button" class="btn-dark">Refresh Leaderboard</button>
+        </div>
       </div>
 
-      <div class="actions">
-        <button id="uploadBtn">Upload Schedule CSV</button>
+      <div class="panel">
+        <div class="panel-title-row">
+          <h3>Monthly Leaderboard</h3>
+          <span class="mini-pill" id="leaderboardMonthTag">Current</span>
+        </div>
+        <pre id="leaderboardBox">Leaderboard not loaded yet...</pre>
       </div>
 
       <div class="panel">
@@ -54,7 +132,7 @@
 
       <div class="panel">
         <h3>Result</h3>
-        <pre id="resultBox">Waiting for upload...</pre>
+        <pre id="resultBox">Waiting for action...</pre>
       </div>
     </div>
   </div>
