@@ -1,10 +1,173 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta http-equiv="refresh" content="0; url=admin.html">
-  <title>Redirecting...</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staff Login Portal</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  Redirecting to admin page...
+<body class="portal-body">
+  <div class="page portal-page">
+    <div class="portal-shell">
+      <div class="portal-brand">
+        <div class="brand-badge">SP</div>
+        <div>
+          <h1>Staff Login Portal</h1>
+          <p class="sub">Choose the correct login area below.</p>
+        </div>
+      </div>
+
+      <div class="portal-grid">
+        <section class="auth-card">
+          <div class="auth-head">
+            <span class="mini-pill">Staff Access</span>
+            <h2>Staff Login</h2>
+            <p class="sub">Login with your staff login ID, then view today shift and attendance actions.</p>
+          </div>
+
+          <div class="field">
+            <label for="staffLoginId">Login ID</label>
+            <input type="text" id="staffLoginId" placeholder="Enter staff login ID" />
+          </div>
+
+          <div class="actions">
+            <button id="staffLoginBtn">Login as Staff</button>
+          </div>
+
+          <div class="inline-status" id="staffStatus">Waiting for action...</div>
+        </section>
+
+        <section class="auth-card auth-card-admin">
+          <div class="auth-head">
+            <span class="mini-pill mini-pill-dark">Admin Access</span>
+            <h2>Admin Login</h2>
+            <p class="sub">Only admin users can enter the upload dashboard.</p>
+          </div>
+
+          <div class="field">
+            <label for="adminLoginId">Admin Login ID</label>
+            <input type="text" id="adminLoginId" placeholder="Enter admin login ID" />
+          </div>
+
+          <div class="field">
+            <label for="adminPassword">Password</label>
+            <input type="password" id="adminPassword" placeholder="Enter admin password" />
+          </div>
+
+          <div class="actions">
+            <button id="adminLoginBtn" class="btn-dark">Login as Admin</button>
+          </div>
+
+          <div class="inline-status" id="adminStatus">Waiting for action...</div>
+        </section>
+      </div>
+
+      <div class="footer-note">
+        <div class="status-pill" id="apiStatus">API: Checking...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "https://staff-portal-proxy.mdrobiulislam.workers.dev";
+
+    const apiStatus = document.getElementById("apiStatus");
+    const staffLoginBtn = document.getElementById("staffLoginBtn");
+    const adminLoginBtn = document.getElementById("adminLoginBtn");
+    const staffStatus = document.getElementById("staffStatus");
+    const adminStatus = document.getElementById("adminStatus");
+
+    async function checkApi() {
+      try {
+        const res = await fetch(`${API_BASE}?action=health`);
+        const data = await res.json();
+        apiStatus.textContent = data.ok ? `API: Online (${data.version})` : "API: Error";
+      } catch (err) {
+        apiStatus.textContent = "API: Offline";
+      }
+    }
+
+    async function postJson(payload) {
+      const res = await fetch(API_BASE, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      return res.json();
+    }
+
+    async function handleStaffLogin() {
+      const loginId = document.getElementById("staffLoginId").value.trim();
+      if (!loginId) {
+        alert("Please enter staff login ID");
+        return;
+      }
+
+      staffLoginBtn.disabled = true;
+      staffStatus.textContent = "Checking staff login...";
+
+      try {
+        const data = await postJson({
+          action: "staffLogin",
+          login_id: loginId
+        });
+
+        if (!data.ok) {
+          staffStatus.textContent = data.error || "Staff login failed";
+          return;
+        }
+
+        localStorage.setItem("staffPortalStaff", JSON.stringify(data.staff || {}));
+        localStorage.removeItem("staffPortalAdmin");
+        staffStatus.textContent = "Login success. Opening staff portal...";
+        window.location.href = "staff.html";
+      } catch (err) {
+        staffStatus.textContent = err?.message || "Login failed";
+      } finally {
+        staffLoginBtn.disabled = false;
+      }
+    }
+
+    async function handleAdminLogin() {
+      const loginId = document.getElementById("adminLoginId").value.trim();
+      const password = document.getElementById("adminPassword").value;
+
+      if (!loginId || !password) {
+        alert("Please enter admin login ID and password");
+        return;
+      }
+
+      adminLoginBtn.disabled = true;
+      adminStatus.textContent = "Checking admin login...";
+
+      try {
+        const data = await postJson({
+          action: "adminLogin",
+          login_id: loginId,
+          password
+        });
+
+        if (!data.ok) {
+          adminStatus.textContent = data.error || "Admin login failed";
+          return;
+        }
+
+        localStorage.setItem("staffPortalAdmin", JSON.stringify({
+          login_id: loginId,
+          at: new Date().toISOString()
+        }));
+        adminStatus.textContent = "Login success. Opening admin dashboard...";
+        window.location.href = "admin.html";
+      } catch (err) {
+        adminStatus.textContent = err?.message || "Login failed";
+      } finally {
+        adminLoginBtn.disabled = false;
+      }
+    }
+
+    staffLoginBtn.addEventListener("click", handleStaffLogin);
+    adminLoginBtn.addEventListener("click", handleAdminLogin);
+    checkApi();
+  </script>
 </body>
 </html>
