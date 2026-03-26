@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staff Portal - Admin Schedule Upload</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <div class="header-row">
+        <div>
+          <h1>Admin Schedule Upload</h1>
+          <p class="sub">Upload monthly roster CSV into the staff portal system.</p>
+        </div>
+        <div class="status-pill" id="apiStatus">API: Checking...</div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="uploadMonth">Upload Month</label>
+          <input type="month" id="uploadMonth" value="2026-04" />
+        </div>
+
+        <div class="field">
+          <label for="uploadedBy">Uploaded By</label>
+          <input type="text" id="uploadedBy" value="ADMIN" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="csvFile">Roster CSV File</label>
+        <input type="file" id="csvFile" accept=".csv" />
+        <div class="help">Export your roster as CSV and upload it here.</div>
+      </div>
+
+      <div class="actions">
+        <button id="uploadBtn">Upload Schedule CSV</button>
+      </div>
+
+      <div class="panel">
+        <h3>Expected CSV Tips</h3>
+        <ul>
+          <li>Use the real roster export from Google Sheets or Excel as CSV.</li>
+          <li>The system will try to ignore legend rows, weekday rows, and extra layout rows.</li>
+          <li>Only staff already added in <strong>STAFF_MASTER</strong> will match.</li>
+          <li>Shift timing is not stored in CSV — it is read later from <strong>SHIFT_RULES</strong>.</li>
+        </ul>
+      </div>
+
+      <div class="panel">
+        <h3>Result</h3>
+        <pre id="resultBox">Waiting for upload...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
