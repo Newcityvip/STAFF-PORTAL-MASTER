@@ -86,9 +86,12 @@ function getAdminLoginId() {
   );
 }
 
-/* =========================
-   FIXED UPLOAD LOGIC ONLY
-   ========================= */
+function isRealCsvFile(file) {
+  if (!file) return false;
+  const name = String(file.name || "").toLowerCase().trim();
+  return name.endsWith(".csv") && !name.endsWith(".csv.xlsx") && !name.endsWith(".csv.xls");
+}
+
 async function uploadCsv() {
   const uploadMonth = uploadMonthInput?.value?.trim() || "";
   const uploadedBy = uploadedByInput?.value?.trim() || "ADMIN";
@@ -104,6 +107,11 @@ async function uploadCsv() {
     return;
   }
 
+  if (!isRealCsvFile(file)) {
+    resultBox.textContent = "ERROR:\nPlease upload a real .csv file only.\nDo not upload .xlsx or .csv.xlsx file.";
+    return;
+  }
+
   uploadBtn.disabled = true;
   uploadBtn.textContent = "Uploading...";
   resultBox.textContent = "Reading CSV file...";
@@ -113,11 +121,11 @@ async function uploadCsv() {
 
     resultBox.textContent = "Sending to backend... please wait.";
 
-    let data = null;
-    let uploadError = null;
+    let uploadData = null;
+    let uploadErr = null;
 
     try {
-      data = await postJson({
+      uploadData = await postJson({
         action: "importScheduleCsv",
         upload_month: uploadMonth,
         uploaded_by: uploadedBy,
@@ -125,50 +133,57 @@ async function uploadCsv() {
         csv_text: csvText
       });
     } catch (err) {
-      uploadError = err;
+      uploadErr = err;
     }
 
-    // Normal success
-    if (data?.ok) {
-      resultBox.textContent = JSON.stringify(data, null, 2);
+    if (uploadData?.ok) {
+      resultBox.textContent = JSON.stringify(uploadData, null, 2);
       await refreshPerformanceArea();
       return;
     }
 
-    // If failed / timed out / 524 / invalid JSON, verify whether upload actually saved
-    resultBox.textContent = "Upload response timed out or returned error.\nChecking whether data was still saved...";
+    const uploadErrMsg = String(uploadErr?.message || "");
+    const shouldVerify =
+      !uploadData ||
+      uploadErrMsg.includes("524") ||
+      uploadErrMsg.includes("timeout") ||
+      uploadErrMsg.includes("timed out") ||
+      uploadErrMsg.includes("The operation was canceled") ||
+      uploadErrMsg.includes("Failed to fetch");
 
-    try {
-      const verify = await postJson({
-        action: "verifyLastScheduleUpload",
-        upload_month: uploadMonth,
-        file_name: file.name
-      });
+    if (shouldVerify) {
+      resultBox.textContent = "Upload response timed out or failed.\nChecking whether rows were still saved...";
 
-      if (verify?.ok && Number(verify?.saved_rows || 0) > 0) {
-        resultBox.textContent = JSON.stringify({
-          ok: true,
-          message: "Upload completed successfully (original request timed out, but rows were saved).",
-          upload_month: verify.upload_month || uploadMonth,
-          file_name: verify.file_name || file.name,
-          batch_id: verify.batch_id || "",
-          saved_rows: verify.saved_rows || 0
-        }, null, 2);
+      try {
+        const verifyData = await postJson({
+          action: "verifyLastScheduleUpload",
+          upload_month: uploadMonth,
+          file_name: file.name
+        });
 
-        await refreshPerformanceArea();
-        return;
+        if (verifyData?.ok && Number(verifyData?.saved_rows || 0) > 0) {
+          resultBox.textContent = JSON.stringify({
+            ok: true,
+            message: "Upload completed successfully (original request timed out, but rows were saved).",
+            upload_month: verifyData.upload_month || uploadMonth,
+            file_name: verifyData.file_name || file.name,
+            batch_id: verifyData.batch_id || "",
+            saved_rows: verifyData.saved_rows || 0
+          }, null, 2);
+
+          await refreshPerformanceArea();
+          return;
+        }
+      } catch (verifyErr) {
+        // ignore and fall through
       }
-    } catch (verifyErr) {
-      // ignore verify fail, show original fail below
     }
 
-    // If original response had JSON error object
-    if (data) {
-      resultBox.textContent = JSON.stringify(data, null, 2);
+    if (uploadData) {
+      resultBox.textContent = JSON.stringify(uploadData, null, 2);
     } else {
-      resultBox.textContent = "ERROR:\n" + (uploadError?.message || "Upload failed");
+      resultBox.textContent = "ERROR:\n" + (uploadErr?.message || "Upload failed");
     }
-
   } catch (err) {
     resultBox.textContent = "ERROR:\n" + (err?.message || err);
   } finally {
@@ -678,7 +693,7 @@ function renderPreview(item) {
 function getSelectedDashboardItem() {
   const staffId = document.getElementById("kpiStaffSelect")?.value || "";
   if (!staffId) return null;
-  return dashboardData.find(item => String(item.staff_id) === String(staffId)) || null;
+  return dashboardData.find(item => String(item.staff_id) === String(currentStaffId)) || null;
 }
 
 function loadSelectedStaffIntoForm() {
