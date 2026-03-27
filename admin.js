@@ -66,7 +66,14 @@ async function postJson(payload) {
     },
     body: JSON.stringify(payload)
   });
-  return res.json();
+
+  const text = await res.text();
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error(text || `HTTP ${res.status}`);
+  }
 }
 
 function getAdminLoginId() {
