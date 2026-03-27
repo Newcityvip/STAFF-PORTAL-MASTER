@@ -12,7 +12,7 @@
       <div class="header-row">
         <div>
           <h1>Staff Portal</h1>
-          <p class="sub">Today shift, attendance status, live score, and performance tracking.</p>
+          <p class="sub">Today shift, attendance status, break actions, and live performance score.</p>
         </div>
         <div class="right-actions">
           <div class="status-pill" id="apiStatus">API: Checking...</div>
@@ -102,6 +102,34 @@
 
       <div class="panel">
         <div class="panel-title-row">
+          <h3>Break Actions</h3>
+          <span class="mini-pill mini-pill-muted" id="breakState">Ready</span>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="breakTypeSelect">Break Type</label>
+            <select id="breakTypeSelect">
+              <option value="BREAK">Break</option>
+              <option value="PRAYER_BREAK">Prayer Break</option>
+              <option value="BIO_BREAK">Bio Break</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="breakRemarkInput">Remark (optional)</label>
+            <input type="text" id="breakRemarkInput" placeholder="Optional remark" />
+          </div>
+        </div>
+
+        <div class="break-actions">
+          <button id="breakStartBtn" type="button">Start Break</button>
+          <button id="breakEndBtn" type="button" class="btn-dark">End Break</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title-row">
           <h3>Today Attendance</h3>
           <span class="mini-pill mini-pill-muted" id="attendanceState">Waiting...</span>
         </div>
@@ -126,6 +154,39 @@
         </div>
 
         <pre id="attendanceBox">Loading attendance status...</pre>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title-row">
+          <h3>Staff Score Board</h3>
+          <span class="mini-pill mini-pill-muted" id="scoreboardMonthTag">Loading...</span>
+        </div>
+
+        <div class="scoreboard-grid">
+          <div class="panel" style="margin:0">
+            <div class="panel-title-row">
+              <h3>My Full Score Details</h3>
+            </div>
+            <pre id="myScoreBox">Loading my score...</pre>
+          </div>
+
+          <div class="panel" style="margin:0">
+            <div class="panel-title-row">
+              <h3>Other Staff Final Scores</h3>
+            </div>
+            <div class="score-list" id="otherStaffScores">
+              <div class="score-row">
+                <div class="score-row-left">
+                  <div class="score-row-name">Loading...</div>
+                  <div class="score-row-sub">Please wait</div>
+                </div>
+                <div class="score-row-right">
+                  <span class="final-score-chip">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="panel">
