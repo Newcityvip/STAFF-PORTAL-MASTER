@@ -14,6 +14,12 @@ const logoutBtn = el("logoutBtn");
 const checkInBtn = el("checkInBtn");
 const checkOutBtn = el("checkOutBtn");
 
+const breakTypeSelect = el("breakTypeSelect");
+const breakRemarkInput = el("breakRemarkInput");
+const breakStartBtn = el("breakStartBtn");
+const breakEndBtn = el("breakEndBtn");
+const breakState = el("breakState");
+
 const resultBox = el("resultMessage", "resultBox");
 const attendanceBox = el("attendanceMessage", "attendanceBox");
 const attendanceState = el("attendanceState");
@@ -30,6 +36,10 @@ const finalScoreEl = el("finalScore", "finalScoreValue");
 const ratingLabelEl = el("ratingLabel", "ratingLabelValue");
 const scoreUpdatedTagEl = el("scoreUpdatedTag", "liveScoreMonth");
 const scoreNoteEl = el("scoreNote");
+
+const scoreboardMonthTagEl = el("scoreboardMonthTag");
+const myScoreBox = el("myScoreBox");
+const otherStaffScores = el("otherStaffScores");
 
 const accessBanner = el("accessBanner");
 
@@ -62,6 +72,24 @@ function showAttendanceMessage(message) {
 
 function toUpper(v) {
   return String(v || "").trim().toUpperCase();
+}
+
+function toNum(v, fallback = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function fmtScore(v) {
+  return toNum(v, 0).toFixed(2);
+}
+
+function escapeHtml(value) {
+  return String(value == null ? "" : value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function formatTimeFromDateTime(value) {
@@ -221,6 +249,7 @@ function buildAttendanceSummary(logs) {
     setText(todayCheckOutEl, "-");
     setText(todayStatusEl, "-");
     setText(todayLateMinutesEl, "-");
+    updateBreakState(logs);
 
     return "No attendance action found for today.";
   }
@@ -246,12 +275,14 @@ function buildAttendanceSummary(logs) {
   setText(todayStatusEl, statusFlag);
   setText(todayLateMinutesEl, lateMinutes);
 
+  updateBreakState(logs);
+
   return [
     `Check In : ${checkInTime}`,
     `Check Out: ${checkOutTime}`,
     `Status   : ${statusFlag}`,
     `Late Min : ${lateMinutes}`
-  ].join("\\n");
+  ].join("\n");
 }
 
 async function loadAttendance() {
@@ -262,6 +293,7 @@ async function loadAttendance() {
 
     if (!data.ok) {
       showAttendanceMessage(data.error || "Could not load attendance.");
+      updateBreakState([]);
       return;
     }
 
@@ -269,6 +301,7 @@ async function loadAttendance() {
     showAttendanceMessage(buildAttendanceSummary(todayLogs));
   } catch (err) {
     showAttendanceMessage("Could not load attendance.");
+    updateBreakState([]);
   }
 }
 
@@ -278,6 +311,10 @@ function refreshButtonState() {
 
   if (checkInBtn) checkInBtn.disabled = !!checkIn;
   if (checkOutBtn) checkOutBtn.disabled = !checkIn || !!checkOut;
+
+  const allowBreak = !!checkIn && !checkOut;
+  if (breakStartBtn) breakStartBtn.disabled = !allowBreak;
+  if (breakEndBtn) breakEndBtn.disabled = !allowBreak;
 }
 
 /* ========= SCORE ========= */
@@ -321,11 +358,139 @@ async function loadPerformanceScore() {
   }
 }
 
-/* ========= ACTIONS ========= */
+/* ========= STAFF SCOREBOARD ========= */
+function renderOtherStaffScores(items) {
+  if (!otherStaffScores) return;
+
+  if (!items || !items.length) {
+    otherStaffScores.innerHTML = `
+      <div class="score-row">
+        <div class="score-row-left">
+          <div class="score-row-name">No data found</div>
+          <div class="score-row-sub">No other staff score available</div>
+        </div>
+        <div class="score-row-right">
+          <span class="final-score-chip">-</span>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  otherStaffScores.innerHTML = items.map(item => `
+    <div class="score-row">
+      <div class="score-row-left">
+        <div class="score-row-name">${escapeHtml(item.full_name || "-")}</div>
+        <div class="score-row-sub">${escapeHtml(item.team || "-")} | ${escapeHtml(item.rating_label || "-")}</div>
+      </div>
+      <div class="score-row-right">
+        <span class="final-score-chip">${fmtScore(item.final_score)}</span>
+      </div>
+    </div>
+  `).join("");
+}
+
+async function loadStaffScoreboard() {
+  try {
+    const data = await getJson(
+      `${API_BASE}?action=staffScoreboard&login_id=${encodeURIComponent(currentStaff.login_id)}`
+    );
+
+    if (!data?.ok) {
+      if (myScoreBox) myScoreBox.textContent = data?.error || "Could not load scoreboard.";
+      renderOtherStaffScores([]);
+      if (scoreboardMonthTagEl) scoreboardMonthTagEl.textContent = "-";
+      return;
+    }
+
+    if (scoreboardMonthTagEl) {
+      scoreboardMonthTagEl.textContent = data.month || "Live";
+    }
+
+    if (myScoreBox) {
+      myScoreBox.textContent = JSON.stringify(data.me || {}, null, 2);
+    }
+
+    renderOtherStaffScores(data.others || []);
+  } catch (err) {
+    if (myScoreBox) myScoreBox.textContent = "Could not load scoreboard.";
+    renderOtherStaffScores([]);
+    if (scoreboardMonthTagEl) scoreboardMonthTagEl.textContent = "-";
+  }
+}
+
+/* ========= BREAK HELPERS ========= */
+function getBreakOpenStatus(logs, breakType) {
+  let balance = 0;
+
+  (logs || []).forEach(item => {
+    const action = toUpper(item.action_type);
+    if (action === `${breakType}_START`) balance++;
+    if (action === `${breakType}_END` && balance > 0) balance--;
+  });
+
+  return balance > 0;
+}
+
+function updateBreakState(logs) {
+  const type = toUpper(breakTypeSelect?.value || "BREAK");
+  const isOpen = getBreakOpenStatus(logs || todayLogs, type);
+
+  if (!breakState) return;
+
+  if (isOpen) {
+    breakState.textContent = `${type.replaceAll("_", " ")} ACTIVE`;
+  } else {
+    breakState.textContent = "Ready";
+  }
+}
+
 function getDeviceInfo() {
   return navigator.userAgent || "Browser";
 }
 
+async function handleBreakAction(mode) {
+  const breakType = breakTypeSelect?.value || "BREAK";
+  const remarks = breakRemarkInput?.value?.trim() || "";
+
+  if (mode === "START") {
+    if (breakStartBtn) breakStartBtn.disabled = true;
+  } else {
+    if (breakEndBtn) breakEndBtn.disabled = true;
+  }
+
+  showResult(`${mode === "START" ? "Starting" : "Ending"} ${breakType.replaceAll("_", " ").toLowerCase()}...`);
+
+  try {
+    const data = await postJson({
+      action: "breakAction",
+      login_id: currentStaff.login_id,
+      break_type: breakType,
+      break_mode: mode,
+      source: "STAFF_PORTAL_WEB",
+      office_ip: portalClientIp || "",
+      device_info: getDeviceInfo(),
+      remarks
+    });
+
+    if (data.ok) {
+      showResult(data.ui_message || data.message || "Break action successful.");
+      if (breakRemarkInput) breakRemarkInput.value = "";
+    } else {
+      showResult(data.error || "Break action failed.", true);
+    }
+
+    await loadAttendance();
+    await loadPerformanceScore();
+    await loadStaffScoreboard();
+  } catch (err) {
+    showResult("Break action failed: " + (err?.message || err), true);
+  } finally {
+    refreshButtonState();
+  }
+}
+
+/* ========= ACTIONS ========= */
 async function handleCheckIn() {
   if (checkInBtn) checkInBtn.disabled = true;
   showResult("Sending check-in...");
@@ -348,6 +513,7 @@ async function handleCheckIn() {
 
     await loadAttendance();
     await loadPerformanceScore();
+    await loadStaffScoreboard();
   } catch (err) {
     showResult("Check-in failed: " + (err?.message || err), true);
   } finally {
@@ -377,6 +543,7 @@ async function handleCheckOut() {
 
     await loadAttendance();
     await loadPerformanceScore();
+    await loadStaffScoreboard();
   } catch (err) {
     showResult("Check-out failed: " + (err?.message || err), true);
   } finally {
@@ -403,11 +570,15 @@ async function init() {
   await loadTodayShift();
   await loadAttendance();
   await loadPerformanceScore();
+  await loadStaffScoreboard();
 
   refreshButtonState();
 
   if (checkInBtn) checkInBtn.addEventListener("click", handleCheckIn);
   if (checkOutBtn) checkOutBtn.addEventListener("click", handleCheckOut);
+  if (breakStartBtn) breakStartBtn.addEventListener("click", () => handleBreakAction("START"));
+  if (breakEndBtn) breakEndBtn.addEventListener("click", () => handleBreakAction("END"));
+  if (breakTypeSelect) breakTypeSelect.addEventListener("change", () => updateBreakState(todayLogs));
   if (logoutBtn) logoutBtn.addEventListener("click", logout);
 }
 
