@@ -1,4 +1,3 @@
-
 const API_BASE = "https://staff-portal-proxy.mdrobiulislam.workers.dev";
 
 const apiStatus = document.getElementById("apiStatus");
@@ -81,9 +80,9 @@ function getAdminLoginId() {
 }
 
 async function uploadCsv() {
-  const uploadMonth = uploadMonthInput.value.trim();
-  const uploadedBy = uploadedByInput.value.trim() || "ADMIN";
-  const file = csvFileInput.files[0];
+  const uploadMonth = uploadMonthInput?.value?.trim() || "";
+  const uploadedBy = uploadedByInput?.value?.trim() || "ADMIN";
+  const file = csvFileInput?.files?.[0];
 
   if (!uploadMonth) {
     alert("Please select upload month");
@@ -167,37 +166,171 @@ function ensurePerformanceUi() {
   wrap.id = "performanceWrap";
   wrap.innerHTML = `
     <style>
-      #performanceWrap .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-      #performanceWrap .grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
       #performanceWrap .admin-section{margin-top:18px}
-      #performanceWrap .score-card{border:1px solid #e5e7eb;border-radius:14px;padding:14px;background:#fff}
-      #performanceWrap .score-card .label{font-size:12px;opacity:.75;display:block;margin-bottom:6px}
-      #performanceWrap .score-card strong{font-size:24px;line-height:1.1}
-      #performanceWrap .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+      #performanceWrap .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+      #performanceWrap .grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+      #performanceWrap .two-col{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(320px,0.95fr);gap:18px}
+      #performanceWrap .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
       #performanceWrap .toolbar .field{flex:0 0 auto}
-      #performanceWrap .toolbar .field.wide{min-width:220px}
-      #performanceWrap .mini-note{font-size:12px;opacity:.8;margin-top:6px}
-      #performanceWrap .rating-chip{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600}
-      #performanceWrap .rating-highest{background:#dcfce7}
-      #performanceWrap .rating-high{background:#dbeafe}
-      #performanceWrap .rating-mid{background:#fef3c7}
-      #performanceWrap .rating-ok{background:#ede9fe}
-      #performanceWrap .rating-low{background:#fee2e2}
-      #performanceWrap .table-wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:14px;background:#fff}
-      #performanceWrap table{width:100%;border-collapse:collapse}
-      #performanceWrap th,#performanceWrap td{padding:10px 12px;border-bottom:1px solid #f1f5f9;text-align:left;font-size:14px;vertical-align:top}
-      #performanceWrap th{position:sticky;top:0;background:#f8fafc;z-index:1}
-      #performanceWrap .row-actions{display:flex;gap:6px;flex-wrap:wrap}
-      #performanceWrap .small-btn{padding:8px 12px;border:0;border-radius:10px;cursor:pointer}
-      #performanceWrap .ghost-btn{background:#eef2ff}
-      #performanceWrap .save-btn{background:#111827;color:#fff}
-      #performanceWrap .secondary-btn{background:#f1f5f9}
-      #performanceWrap input[type="number"], #performanceWrap input[type="month"], #performanceWrap select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:10px}
-      #performanceWrap .two-col{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
-      #performanceWrap .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-      #performanceWrap pre{white-space:pre-wrap;word-break:break-word}
-      @media (max-width: 960px){
-        #performanceWrap .grid-3,#performanceWrap .grid-4,#performanceWrap .kpi-grid,#performanceWrap .two-col{grid-template-columns:1fr}
+      #performanceWrap .toolbar .field.wide{min-width:260px;flex:1 1 260px}
+      #performanceWrap .score-card{
+        border:1px solid #dbe4f0;
+        border-radius:16px;
+        padding:16px;
+        background:#ffffff;
+        box-shadow:0 2px 10px rgba(15,23,42,.04)
+      }
+      #performanceWrap .score-card .label{
+        display:block;
+        font-size:13px;
+        color:#6b7280;
+        margin-bottom:8px;
+        font-weight:600
+      }
+      #performanceWrap .score-card strong{
+        font-size:18px;
+        line-height:1.15;
+        color:#0f172a
+      }
+      #performanceWrap .mini-note{
+        font-size:12px;
+        color:#475569;
+        margin-top:8px;
+        line-height:1.45
+      }
+      #performanceWrap .table-wrap{
+        overflow:auto;
+        border:1px solid #dbe4f0;
+        border-radius:16px;
+        background:#fff
+      }
+      #performanceWrap table{
+        width:100%;
+        border-collapse:collapse;
+        min-width:760px
+      }
+      #performanceWrap th,
+      #performanceWrap td{
+        padding:12px 14px;
+        border-bottom:1px solid #eef2f7;
+        text-align:left;
+        font-size:14px;
+        vertical-align:top;
+        color:#1f2937
+      }
+      #performanceWrap th{
+        position:sticky;
+        top:0;
+        background:#f8fbff;
+        z-index:1;
+        font-weight:800;
+        color:#0f172a
+      }
+      #performanceWrap .row-actions{
+        display:flex;
+        gap:8px;
+        flex-wrap:wrap
+      }
+      #performanceWrap .small-btn{
+        padding:9px 13px;
+        border:0;
+        border-radius:12px;
+        cursor:pointer;
+        font-weight:700
+      }
+      #performanceWrap .ghost-btn{
+        background:#e9efff;
+        color:#3346b4
+      }
+      #performanceWrap .save-btn{
+        background:#0f1838;
+        color:#fff
+      }
+      #performanceWrap .secondary-btn{
+        background:#eef2f7;
+        color:#0f172a
+      }
+      #performanceWrap .field label{
+        display:block;
+        font-size:13px;
+        font-weight:800;
+        color:#0f172a;
+        margin-bottom:8px;
+        line-height:1.35;
+        white-space:normal;
+        word-break:break-word
+      }
+      #performanceWrap input[type="text"],
+      #performanceWrap input[type="number"],
+      #performanceWrap input[type="month"],
+      #performanceWrap select{
+        width:100%;
+        padding:11px 12px;
+        border:1px solid #cfd8e3;
+        border-radius:12px;
+        background:#fff;
+        color:#111827;
+        font-size:14px
+      }
+      #performanceWrap .kpi-grid{
+        display:grid;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:12px;
+        margin-top:4px
+      }
+      #performanceWrap .kpi-grid .field{
+        min-width:0
+      }
+      #performanceWrap .kpi-grid .field label{
+        min-height:38px
+      }
+      #performanceWrap .rating-chip{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        padding:6px 12px;
+        border-radius:999px;
+        font-size:12px;
+        font-weight:800;
+        line-height:1.2;
+        color:#0f172a
+      }
+      #performanceWrap .rating-highest{background:#dcfce7;color:#166534}
+      #performanceWrap .rating-high{background:#dbeafe;color:#1d4ed8}
+      #performanceWrap .rating-mid{background:#fef3c7;color:#92400e}
+      #performanceWrap .rating-ok{background:#ede9fe;color:#5b21b6}
+      #performanceWrap .rating-low{background:#fee2e2;color:#b91c1c}
+      #performanceWrap .leader-name{
+        font-weight:800;
+        color:#0f172a
+      }
+      #performanceWrap .leader-sub{
+        font-size:12px;
+        color:#64748b;
+        margin-top:2px
+      }
+      #performanceWrap pre{
+        white-space:pre-wrap;
+        word-break:break-word;
+        background:#fff;
+        border:1px solid #e5e7eb;
+        border-radius:14px;
+        padding:12px;
+        color:#0f172a
+      }
+      @media (max-width: 1100px){
+        #performanceWrap .two-col{grid-template-columns:1fr}
+      }
+      @media (max-width: 920px){
+        #performanceWrap .grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}
+        #performanceWrap .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      }
+      @media (max-width: 640px){
+        #performanceWrap .grid-3,
+        #performanceWrap .grid-4,
+        #performanceWrap .kpi-grid{
+          grid-template-columns:1fr
+        }
       }
     </style>
 
@@ -265,13 +398,34 @@ function ensurePerformanceUi() {
           </div>
 
           <div class="kpi-grid">
-            <div class="field"><label for="kpiLeadership">L_Leadership</label><input type="number" id="kpiLeadership" min="0" max="5" step="0.1" value="0" /></div>
-            <div class="field"><label for="kpiEffectiveness">E_Effectiveness</label><input type="number" id="kpiEffectiveness" min="0" max="5" step="0.1" value="0" /></div>
-            <div class="field"><label for="kpiProblemSolving">P_ProblemSolving</label><input type="number" id="kpiProblemSolving" min="0" max="5" step="0.1" value="0" /></div>
-            <div class="field"><label for="kpiCommunication">C_Communication</label><input type="number" id="kpiCommunication" min="0" max="5" step="0.1" value="0" /></div>
-            <div class="field"><label for="kpiProductivity">PR_Productivity</label><input type="number" id="kpiProductivity" min="0" max="5" step="0.1" value="0" /></div>
-            <div class="field"><label for="kpiInitiative">I_Initiative</label><input type="number" id="kpiInitiative" min="0" max="5" step="0.1" value="0" /></div>
-            <div class="field"><label for="kpiPenalty">Penalty</label><input type="number" id="kpiPenalty" min="0" step="0.1" value="0" /></div>
+            <div class="field">
+              <label for="kpiLeadership">L_Leadership</label>
+              <input type="number" id="kpiLeadership" min="0" max="5" step="0.1" value="0" />
+            </div>
+            <div class="field">
+              <label for="kpiEffectiveness">E_Effectiveness</label>
+              <input type="number" id="kpiEffectiveness" min="0" max="5" step="0.1" value="0" />
+            </div>
+            <div class="field">
+              <label for="kpiProblemSolving">P_ProblemSolving</label>
+              <input type="number" id="kpiProblemSolving" min="0" max="5" step="0.1" value="0" />
+            </div>
+            <div class="field">
+              <label for="kpiCommunication">C_Communication</label>
+              <input type="number" id="kpiCommunication" min="0" max="5" step="0.1" value="0" />
+            </div>
+            <div class="field">
+              <label for="kpiProductivity">PR_Productivity</label>
+              <input type="number" id="kpiProductivity" min="0" max="5" step="0.1" value="0" />
+            </div>
+            <div class="field">
+              <label for="kpiInitiative">I_Initiative</label>
+              <input type="number" id="kpiInitiative" min="0" max="5" step="0.1" value="0" />
+            </div>
+            <div class="field">
+              <label for="kpiPenalty">Penalty</label>
+              <input type="number" id="kpiPenalty" min="0" step="0.1" value="0" />
+            </div>
             <div class="field">
               <label for="kpiMonthInput">KPI Month</label>
               <input type="month" id="kpiMonthInput" />
@@ -301,12 +455,12 @@ function ensurePerformanceUi() {
 
   page.appendChild(wrap);
 
-  document.getElementById("refreshDashboardBtn").addEventListener("click", refreshPerformanceArea);
-  document.getElementById("saveKpiBtn").addEventListener("click", saveKpiForm);
-  document.getElementById("resetKpiBtn").addEventListener("click", resetKpiForm);
-  document.getElementById("loadSelectedKpiBtn").addEventListener("click", loadSelectedStaffIntoForm);
-  document.getElementById("kpiStaffSelect").addEventListener("change", loadSelectedStaffIntoForm);
-  document.getElementById("staffSearchInput").addEventListener("input", renderLeaderboardTable);
+  document.getElementById("refreshDashboardBtn")?.addEventListener("click", refreshPerformanceArea);
+  document.getElementById("saveKpiBtn")?.addEventListener("click", saveKpiForm);
+  document.getElementById("resetKpiBtn")?.addEventListener("click", resetKpiForm);
+  document.getElementById("loadSelectedKpiBtn")?.addEventListener("click", loadSelectedStaffIntoForm);
+  document.getElementById("kpiStaffSelect")?.addEventListener("change", loadSelectedStaffIntoForm);
+  document.getElementById("staffSearchInput")?.addEventListener("input", renderLeaderboardTable);
 }
 
 function getMonthValue() {
@@ -377,8 +531,8 @@ function renderLeaderboardTable() {
     <tr>
       <td>${item.rank || "-"}</td>
       <td>
-        <strong>${escapeHtml(item.full_name || "-")}</strong><br>
-        <small>${escapeHtml(item.login_id || item.staff_id || "-")}</small>
+        <div class="leader-name">${escapeHtml(item.full_name || "-")}</div>
+        <div class="leader-sub">${escapeHtml(item.login_id || item.staff_id || "-")}</div>
       </td>
       <td>${escapeHtml(item.team || "-")}</td>
       <td>${fmtScore(item.attendance_score)}</td>
@@ -576,8 +730,8 @@ async function saveKpiForm() {
 }
 
 if (requireAdminSession()) {
-  uploadBtn.addEventListener("click", uploadCsv);
-  adminLogoutBtn.addEventListener("click", logoutAdmin);
+  uploadBtn?.addEventListener("click", uploadCsv);
+  adminLogoutBtn?.addEventListener("click", logoutAdmin);
   checkApi();
   ensurePerformanceUi();
   setMonthDefaults();
