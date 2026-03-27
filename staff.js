@@ -41,6 +41,33 @@ const scoreboardMonthTagEl = el("scoreboardMonthTag");
 const myScoreBox = el("myScoreBox");
 const otherStaffScores = el("otherStaffScores");
 
+const meFullNameEl = el("meFullName");
+const meLoginIdEl = el("meLoginId");
+const meTeamEl = el("meTeam");
+const meRoleEl = el("meRole");
+
+const meAttendanceScoreEl = el("meAttendanceScore");
+const meKpiScoreEl = el("meKpiScore");
+const meFinalScoreEl = el("meFinalScore");
+const meRatingLabelEl = el("meRatingLabel");
+const meRankEl = el("meRank");
+
+const meLeadershipEl = el("meLeadership");
+const meEffectivenessEl = el("meEffectiveness");
+const meProblemSolvingEl = el("meProblemSolving");
+const meCommunicationEl = el("meCommunication");
+const meProductivityEl = el("meProductivity");
+const meInitiativeEl = el("meInitiative");
+const mePenaltyEl = el("mePenalty");
+
+const meWorkingDaysEl = el("meWorkingDays");
+const meOffDaysEl = el("meOffDays");
+const meLeaveDaysEl = el("meLeaveDays");
+const meLateDaysEl = el("meLateDays");
+const meMissingSignInDaysEl = el("meMissingSignInDays");
+const meMissingSignOutDaysEl = el("meMissingSignOutDays");
+const meTotalLateMinutesEl = el("meTotalLateMinutes");
+
 const accessBanner = el("accessBanner");
 
 let currentStaff = null;
@@ -491,76 +518,74 @@ async function loadPerformanceScore() {
 }
 
 /* ========= MY SCORE DETAIL RENDER ========= */
-function buildInfoRow(label, value) {
-  return `
-    <div style="display:grid;grid-template-columns:170px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid #eef2f7;">
-      <div style="font-weight:700;color:#475569;">${escapeHtml(label)}</div>
-      <div style="color:#0f172a;font-weight:600;">${escapeHtml(value == null || value === "" ? "-" : value)}</div>
-    </div>
-  `;
-}
-
-function buildSectionTitle(title) {
-  return `
-    <div style="margin:14px 0 6px;font-size:15px;font-weight:800;color:#0f172a;">
-      ${escapeHtml(title)}
-    </div>
-  `;
-}
-
 function renderMyScoreDetails(item) {
-  if (!myScoreBox) return;
-
   if (!item) {
-    myScoreBox.innerHTML = `
-      <div style="padding:14px;color:#64748b;">No score details found.</div>
-    `;
+    setText(meFullNameEl, "-");
+    setText(meLoginIdEl, "-");
+    setText(meTeamEl, "-");
+    setText(meRoleEl, "-");
+
+    setText(meAttendanceScoreEl, "-");
+    setText(meKpiScoreEl, "-");
+    setText(meFinalScoreEl, "-");
+    setText(meRatingLabelEl, "-");
+    setText(meRankEl, "-");
+
+    setText(meLeadershipEl, "-");
+    setText(meEffectivenessEl, "-");
+    setText(meProblemSolvingEl, "-");
+    setText(meCommunicationEl, "-");
+    setText(meProductivityEl, "-");
+    setText(meInitiativeEl, "-");
+    setText(mePenaltyEl, "-");
+
+    setText(meWorkingDaysEl, "-");
+    setText(meOffDaysEl, "-");
+    setText(meLeaveDaysEl, "-");
+    setText(meLateDaysEl, "-");
+    setText(meMissingSignInDaysEl, "-");
+    setText(meMissingSignOutDaysEl, "-");
+    setText(meTotalLateMinutesEl, "-");
+
+    if (myScoreBox) {
+      myScoreBox.textContent = "No score details found.";
+    }
     return;
   }
 
   const attendance = item.attendance_details || {};
   const kpi = item.kpi_details || {};
 
-  myScoreBox.innerHTML = `
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;">
-      ${buildSectionTitle("Basic Information")}
-      ${buildInfoRow("Full Name", item.full_name)}
-      ${buildInfoRow("Login ID", item.login_id)}
-      ${buildInfoRow("Team", item.team)}
-      ${buildInfoRow("Role", item.role)}
-      ${buildInfoRow("Rank", item.rank)}
+  setText(meFullNameEl, item.full_name);
+  setText(meLoginIdEl, item.login_id);
+  setText(meTeamEl, item.team);
+  setText(meRoleEl, item.role);
 
-      ${buildSectionTitle("Final Score Summary")}
-      ${buildInfoRow("Attendance Score", item.attendance_score)}
-      ${buildInfoRow("KPI Score", item.kpi_score)}
-      ${buildInfoRow("Final Score", item.final_score)}
-      ${buildInfoRow("Rating", item.rating_label)}
+  setText(meAttendanceScoreEl, item.attendance_score);
+  setText(meKpiScoreEl, item.kpi_score);
+  setText(meFinalScoreEl, item.final_score);
+  setText(meRatingLabelEl, item.rating_label);
+  setText(meRankEl, item.rank);
 
-      ${buildSectionTitle("Attendance Details")}
-      ${buildInfoRow("Score Month", attendance.score_month)}
-      ${buildInfoRow("Working Days", attendance.working_days)}
-      ${buildInfoRow("Off Days", attendance.off_days)}
-      ${buildInfoRow("Leave Days", attendance.leave_days)}
-      ${buildInfoRow("Late Days", attendance.late_days)}
-      ${buildInfoRow("Missing Sign In Days", attendance.missing_sign_in_days)}
-      ${buildInfoRow("Missing Sign Out Days", attendance.missing_sign_out_days)}
-      ${buildInfoRow("Total Late Minutes", attendance.total_late_minutes)}
-      ${buildInfoRow("Note", attendance.note)}
+  setText(meLeadershipEl, kpi.leadership);
+  setText(meEffectivenessEl, kpi.effectiveness);
+  setText(meProblemSolvingEl, kpi.problem_solving);
+  setText(meCommunicationEl, kpi.communication);
+  setText(meProductivityEl, kpi.productivity);
+  setText(meInitiativeEl, kpi.initiative);
+  setText(mePenaltyEl, kpi.penalty);
 
-      ${buildSectionTitle("KPI Details")}
-      ${buildInfoRow("Score Month", kpi.score_month)}
-      ${buildInfoRow("Leadership", kpi.leadership)}
-      ${buildInfoRow("Effectiveness", kpi.effectiveness)}
-      ${buildInfoRow("Problem Solving", kpi.problem_solving)}
-      ${buildInfoRow("Communication", kpi.communication)}
-      ${buildInfoRow("Productivity", kpi.productivity)}
-      ${buildInfoRow("Initiative", kpi.initiative)}
-      ${buildInfoRow("Penalty", kpi.penalty)}
-      ${buildInfoRow("Raw Average", kpi.raw_average)}
-      ${buildInfoRow("Filled Metrics", kpi.filled_metrics)}
-      ${buildInfoRow("Note", kpi.note)}
-    </div>
-  `;
+  setText(meWorkingDaysEl, attendance.working_days);
+  setText(meOffDaysEl, attendance.off_days);
+  setText(meLeaveDaysEl, attendance.leave_days);
+  setText(meLateDaysEl, attendance.late_days);
+  setText(meMissingSignInDaysEl, attendance.missing_sign_in_days);
+  setText(meMissingSignOutDaysEl, attendance.missing_sign_out_days);
+  setText(meTotalLateMinutesEl, attendance.total_late_minutes);
+
+  if (myScoreBox) {
+    myScoreBox.textContent = "";
+  }
 }
 
 /* ========= STAFF SCOREBOARD ========= */
@@ -602,7 +627,7 @@ async function loadStaffScoreboard() {
     );
 
     if (!data?.ok) {
-      if (myScoreBox) myScoreBox.innerHTML = `<div style="padding:14px;color:#b91c1c;">${escapeHtml(data?.error || "Could not load scoreboard.")}</div>`;
+      renderMyScoreDetails(null);
       renderOtherStaffScores([]);
       if (scoreboardMonthTagEl) scoreboardMonthTagEl.textContent = "-";
       return;
@@ -615,7 +640,7 @@ async function loadStaffScoreboard() {
     renderMyScoreDetails(data.me || null);
     renderOtherStaffScores(data.others || []);
   } catch (err) {
-    if (myScoreBox) myScoreBox.innerHTML = `<div style="padding:14px;color:#b91c1c;">Could not load scoreboard.</div>`;
+    renderMyScoreDetails(null);
     renderOtherStaffScores([]);
     if (scoreboardMonthTagEl) scoreboardMonthTagEl.textContent = "-";
   }
