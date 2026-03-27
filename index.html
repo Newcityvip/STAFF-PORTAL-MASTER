@@ -11,51 +11,49 @@
   <div class="page portal-page">
     <div class="portal-shell">
 
-      <!-- IP ACCESS STATUS -->
       <div id="accessBanner" class="access-banner">Checking access...</div>
 
       <div class="portal-brand">
         <div class="brand-badge">SP</div>
         <div>
           <h1>Staff Login Portal</h1>
-          <p class="sub">Choose the correct login area below.</p>
+          <p class="sub">Choose the correct login area below to continue.</p>
         </div>
       </div>
 
       <div class="portal-grid">
 
-        <!-- STAFF LOGIN -->
         <section class="auth-card">
           <div class="auth-head">
             <span class="mini-pill">Staff Access</span>
             <h2>Staff Login</h2>
-            <p class="sub">Login with your staff login ID.</p>
+            <p class="sub">Use your staff login ID to enter the portal.</p>
           </div>
 
           <div class="field">
-            <label>Login ID</label>
-            <input type="text" id="staffLoginId"/>
+            <label for="staffLoginId">Login ID</label>
+            <input type="text" id="staffLoginId" placeholder="Enter your login ID" />
           </div>
 
           <button id="staffLoginBtn">Login as Staff</button>
           <div id="staffStatus" class="inline-status">Waiting...</div>
         </section>
 
-        <!-- ADMIN LOGIN -->
         <section class="auth-card auth-card-admin">
           <div class="auth-head">
             <span class="mini-pill mini-pill-dark">Admin Access</span>
             <h2>Admin Login</h2>
+            <p class="sub">Authorized admin users only.</p>
           </div>
 
           <div class="field">
-            <label>Admin ID</label>
-            <input type="text" id="adminLoginId"/>
+            <label for="adminLoginId">Admin ID</label>
+            <input type="text" id="adminLoginId" placeholder="Enter admin ID" />
           </div>
 
           <div class="field">
-            <label>Password</label>
-            <input type="password" id="adminPassword"/>
+            <label for="adminPassword">Password</label>
+            <input type="password" id="adminPassword" placeholder="Enter password" />
           </div>
 
           <button id="adminLoginBtn" class="btn-dark">Login as Admin</button>
@@ -112,8 +110,6 @@ async function checkAccess(){
         Your IP: ${CLIENT_IP} <br/>
         Only office network allowed
       `;
-
-      // BLOCK UI
       document.querySelector(".portal-grid").style.display = "none";
     }
 
@@ -151,6 +147,7 @@ staffBtn.onclick = async ()=>{
 
     if(!data.ok){
       staffStatus.textContent = data.error || "Login failed";
+      staffBtn.disabled = false;
       return;
     }
 
@@ -162,9 +159,8 @@ staffBtn.onclick = async ()=>{
 
   }catch(e){
     staffStatus.textContent = "Error";
+    staffBtn.disabled = false;
   }
-
-  staffBtn.disabled = false;
 };
 
 /* ========= ADMIN LOGIN ========= */
@@ -189,6 +185,7 @@ adminBtn.onclick = async ()=>{
 
     if(!data.ok){
       adminStatus.textContent = data.error || "Login failed";
+      adminBtn.disabled = false;
       return;
     }
 
@@ -198,15 +195,12 @@ adminBtn.onclick = async ()=>{
 
   }catch(e){
     adminStatus.textContent = "Error";
+    adminBtn.disabled = false;
   }
-
-  adminBtn.disabled = false;
 };
 
-/* ========= INIT ========= */
 checkAPI();
 checkAccess();
 </script>
-
 </body>
 </html>
