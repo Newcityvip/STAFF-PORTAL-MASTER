@@ -109,6 +109,138 @@ function formatTimeFromDateTime(value) {
   return raw;
 }
 
+function prettifyLabel(key) {
+  const map = {
+    staff_id: "Staff ID",
+    full_name: "Full Name",
+    login_id: "Login ID",
+    team: "Team",
+    role: "Role",
+    attendance_score: "Attendance Score",
+    kpi_score: "KPI Score",
+    final_score: "Final Score",
+    rating_label: "Rating",
+    rank: "Rank",
+    score_month: "Score Month",
+    raw_average: "Raw Average",
+    leadership: "Leadership",
+    effectiveness: "Effectiveness",
+    problem_solving: "Problem Solving",
+    communication: "Communication",
+    productivity: "Productivity",
+    initiative: "Initiative",
+    penalty: "Penalty",
+    filled_metrics: "Filled Metrics",
+    note: "Note",
+    working_days: "Working Days",
+    off_days: "Off Days",
+    leave_days: "Leave Days",
+    late_days: "Late Days",
+    missing_sign_in_days: "Missing Sign In Days",
+    missing_sign_out_days: "Missing Sign Out Days",
+    total_late_minutes: "Total Late Minutes",
+    total_rows: "Total Rows"
+  };
+
+  return map[key] || String(key || "")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, s => s.toUpperCase());
+}
+
+/* ========= POPUP ========= */
+function ensurePopup() {
+  let popup = document.getElementById("actionPopup");
+  if (popup) return popup;
+
+  popup = document.createElement("div");
+  popup.id = "actionPopup";
+  popup.innerHTML = `
+    <div id="actionPopupBox" style="
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,.35);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:99999;
+      padding:16px;
+    ">
+      <div id="actionPopupCard" style="
+        width:100%;
+        max-width:380px;
+        background:#ffffff;
+        border-radius:18px;
+        box-shadow:0 20px 50px rgba(15,23,42,.22);
+        padding:22px;
+        text-align:center;
+      ">
+        <div id="actionPopupIcon" style="
+          width:54px;
+          height:54px;
+          margin:0 auto 14px;
+          border-radius:999px;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-size:24px;
+          font-weight:800;
+          background:#eef2ff;
+          color:#3b5bdb;
+        ">⏳</div>
+        <div id="actionPopupTitle" style="
+          font-size:20px;
+          font-weight:800;
+          color:#0f172a;
+          margin-bottom:8px;
+        ">Please wait</div>
+        <div id="actionPopupText" style="
+          font-size:14px;
+          color:#475569;
+          line-height:1.5;
+        ">Processing...</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(popup);
+  return popup;
+}
+
+function showActionPopup(title, text, type = "loading") {
+  ensurePopup();
+  const box = document.getElementById("actionPopupBox");
+  const icon = document.getElementById("actionPopupIcon");
+  const t = document.getElementById("actionPopupTitle");
+  const txt = document.getElementById("actionPopupText");
+
+  if (!box || !icon || !t || !txt) return;
+
+  box.style.display = "flex";
+  t.textContent = title || "Please wait";
+  txt.textContent = text || "";
+
+  if (type === "success") {
+    icon.textContent = "✓";
+    icon.style.background = "#dcfce7";
+    icon.style.color = "#166534";
+  } else if (type === "error") {
+    icon.textContent = "!";
+    icon.style.background = "#fee2e2";
+    icon.style.color = "#b91c1c";
+  } else {
+    icon.textContent = "⏳";
+    icon.style.background = "#eef2ff";
+    icon.style.color = "#3b5bdb";
+  }
+}
+
+function hideActionPopup(delay = 0) {
+  const box = document.getElementById("actionPopupBox");
+  if (!box) return;
+  setTimeout(() => {
+    box.style.display = "none";
+  }, delay);
+}
+
 /* ========= SESSION ========= */
 function requireStaffSession() {
   const raw = localStorage.getItem("staffPortalStaff");
@@ -358,6 +490,79 @@ async function loadPerformanceScore() {
   }
 }
 
+/* ========= MY SCORE DETAIL RENDER ========= */
+function buildInfoRow(label, value) {
+  return `
+    <div style="display:grid;grid-template-columns:170px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid #eef2f7;">
+      <div style="font-weight:700;color:#475569;">${escapeHtml(label)}</div>
+      <div style="color:#0f172a;font-weight:600;">${escapeHtml(value == null || value === "" ? "-" : value)}</div>
+    </div>
+  `;
+}
+
+function buildSectionTitle(title) {
+  return `
+    <div style="margin:14px 0 6px;font-size:15px;font-weight:800;color:#0f172a;">
+      ${escapeHtml(title)}
+    </div>
+  `;
+}
+
+function renderMyScoreDetails(item) {
+  if (!myScoreBox) return;
+
+  if (!item) {
+    myScoreBox.innerHTML = `
+      <div style="padding:14px;color:#64748b;">No score details found.</div>
+    `;
+    return;
+  }
+
+  const attendance = item.attendance_details || {};
+  const kpi = item.kpi_details || {};
+
+  myScoreBox.innerHTML = `
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;">
+      ${buildSectionTitle("Basic Information")}
+      ${buildInfoRow("Full Name", item.full_name)}
+      ${buildInfoRow("Login ID", item.login_id)}
+      ${buildInfoRow("Team", item.team)}
+      ${buildInfoRow("Role", item.role)}
+      ${buildInfoRow("Rank", item.rank)}
+
+      ${buildSectionTitle("Final Score Summary")}
+      ${buildInfoRow("Attendance Score", item.attendance_score)}
+      ${buildInfoRow("KPI Score", item.kpi_score)}
+      ${buildInfoRow("Final Score", item.final_score)}
+      ${buildInfoRow("Rating", item.rating_label)}
+
+      ${buildSectionTitle("Attendance Details")}
+      ${buildInfoRow("Score Month", attendance.score_month)}
+      ${buildInfoRow("Working Days", attendance.working_days)}
+      ${buildInfoRow("Off Days", attendance.off_days)}
+      ${buildInfoRow("Leave Days", attendance.leave_days)}
+      ${buildInfoRow("Late Days", attendance.late_days)}
+      ${buildInfoRow("Missing Sign In Days", attendance.missing_sign_in_days)}
+      ${buildInfoRow("Missing Sign Out Days", attendance.missing_sign_out_days)}
+      ${buildInfoRow("Total Late Minutes", attendance.total_late_minutes)}
+      ${buildInfoRow("Note", attendance.note)}
+
+      ${buildSectionTitle("KPI Details")}
+      ${buildInfoRow("Score Month", kpi.score_month)}
+      ${buildInfoRow("Leadership", kpi.leadership)}
+      ${buildInfoRow("Effectiveness", kpi.effectiveness)}
+      ${buildInfoRow("Problem Solving", kpi.problem_solving)}
+      ${buildInfoRow("Communication", kpi.communication)}
+      ${buildInfoRow("Productivity", kpi.productivity)}
+      ${buildInfoRow("Initiative", kpi.initiative)}
+      ${buildInfoRow("Penalty", kpi.penalty)}
+      ${buildInfoRow("Raw Average", kpi.raw_average)}
+      ${buildInfoRow("Filled Metrics", kpi.filled_metrics)}
+      ${buildInfoRow("Note", kpi.note)}
+    </div>
+  `;
+}
+
 /* ========= STAFF SCOREBOARD ========= */
 function renderOtherStaffScores(items) {
   if (!otherStaffScores) return;
@@ -397,7 +602,7 @@ async function loadStaffScoreboard() {
     );
 
     if (!data?.ok) {
-      if (myScoreBox) myScoreBox.textContent = data?.error || "Could not load scoreboard.";
+      if (myScoreBox) myScoreBox.innerHTML = `<div style="padding:14px;color:#b91c1c;">${escapeHtml(data?.error || "Could not load scoreboard.")}</div>`;
       renderOtherStaffScores([]);
       if (scoreboardMonthTagEl) scoreboardMonthTagEl.textContent = "-";
       return;
@@ -407,13 +612,10 @@ async function loadStaffScoreboard() {
       scoreboardMonthTagEl.textContent = data.month || "Live";
     }
 
-    if (myScoreBox) {
-      myScoreBox.textContent = JSON.stringify(data.me || {}, null, 2);
-    }
-
+    renderMyScoreDetails(data.me || null);
     renderOtherStaffScores(data.others || []);
   } catch (err) {
-    if (myScoreBox) myScoreBox.textContent = "Could not load scoreboard.";
+    if (myScoreBox) myScoreBox.innerHTML = `<div style="padding:14px;color:#b91c1c;">Could not load scoreboard.</div>`;
     renderOtherStaffScores([]);
     if (scoreboardMonthTagEl) scoreboardMonthTagEl.textContent = "-";
   }
@@ -449,6 +651,14 @@ function getDeviceInfo() {
   return navigator.userAgent || "Browser";
 }
 
+/* ========= ACTION RUNNERS ========= */
+async function afterActionRefresh() {
+  await loadAttendance();
+  await loadPerformanceScore();
+  await loadStaffScoreboard();
+  refreshButtonState();
+}
+
 async function handleBreakAction(mode) {
   const breakType = breakTypeSelect?.value || "BREAK";
   const remarks = breakRemarkInput?.value?.trim() || "";
@@ -459,7 +669,11 @@ async function handleBreakAction(mode) {
     if (breakEndBtn) breakEndBtn.disabled = true;
   }
 
-  showResult(`${mode === "START" ? "Starting" : "Ending"} ${breakType.replaceAll("_", " ").toLowerCase()}...`);
+  showActionPopup(
+    mode === "START" ? "Starting Break" : "Ending Break",
+    `${breakType.replaceAll("_", " ")} is being processed...`,
+    "loading"
+  );
 
   try {
     const data = await postJson({
@@ -476,24 +690,40 @@ async function handleBreakAction(mode) {
     if (data.ok) {
       showResult(data.ui_message || data.message || "Break action successful.");
       if (breakRemarkInput) breakRemarkInput.value = "";
+      await afterActionRefresh();
+      showActionPopup(
+        "Completed",
+        data.ui_message || data.message || "Break action completed successfully.",
+        "success"
+      );
+      hideActionPopup(1200);
     } else {
       showResult(data.error || "Break action failed.", true);
+      showActionPopup(
+        "Action Failed",
+        data.error || "Break action failed.",
+        "error"
+      );
+      hideActionPopup(1600);
     }
-
-    await loadAttendance();
-    await loadPerformanceScore();
-    await loadStaffScoreboard();
   } catch (err) {
-    showResult("Break action failed: " + (err?.message || err), true);
+    const msg = "Break action failed: " + (err?.message || err);
+    showResult(msg, true);
+    showActionPopup("Action Failed", msg, "error");
+    hideActionPopup(1600);
   } finally {
     refreshButtonState();
   }
 }
 
-/* ========= ACTIONS ========= */
 async function handleCheckIn() {
   if (checkInBtn) checkInBtn.disabled = true;
-  showResult("Sending check-in...");
+
+  showActionPopup(
+    "Checking In",
+    "Your check-in is being processed. Please wait...",
+    "loading"
+  );
 
   try {
     const data = await postJson({
@@ -507,15 +737,23 @@ async function handleCheckIn() {
 
     if (data.ok) {
       showResult(data.ui_message || data.message || "Check-in successful.");
+      await afterActionRefresh();
+      showActionPopup(
+        "Check-In Complete",
+        data.ui_message || data.message || "Check-in completed successfully.",
+        "success"
+      );
+      hideActionPopup(1200);
     } else {
       showResult(data.error || "Check-in failed.", true);
+      showActionPopup("Check-In Failed", data.error || "Check-in failed.", "error");
+      hideActionPopup(1600);
     }
-
-    await loadAttendance();
-    await loadPerformanceScore();
-    await loadStaffScoreboard();
   } catch (err) {
-    showResult("Check-in failed: " + (err?.message || err), true);
+    const msg = "Check-in failed: " + (err?.message || err);
+    showResult(msg, true);
+    showActionPopup("Check-In Failed", msg, "error");
+    hideActionPopup(1600);
   } finally {
     refreshButtonState();
   }
@@ -523,7 +761,12 @@ async function handleCheckIn() {
 
 async function handleCheckOut() {
   if (checkOutBtn) checkOutBtn.disabled = true;
-  showResult("Sending check-out...");
+
+  showActionPopup(
+    "Checking Out",
+    "Your check-out is being processed. Please wait...",
+    "loading"
+  );
 
   try {
     const data = await postJson({
@@ -537,15 +780,23 @@ async function handleCheckOut() {
 
     if (data.ok) {
       showResult(data.ui_message || data.message || "Check-out successful.");
+      await afterActionRefresh();
+      showActionPopup(
+        "Check-Out Complete",
+        data.ui_message || data.message || "Check-out completed successfully.",
+        "success"
+      );
+      hideActionPopup(1200);
     } else {
       showResult(data.error || "Check-out failed.", true);
+      showActionPopup("Check-Out Failed", data.error || "Check-out failed.", "error");
+      hideActionPopup(1600);
     }
-
-    await loadAttendance();
-    await loadPerformanceScore();
-    await loadStaffScoreboard();
   } catch (err) {
-    showResult("Check-out failed: " + (err?.message || err), true);
+    const msg = "Check-out failed: " + (err?.message || err);
+    showResult(msg, true);
+    showActionPopup("Check-Out Failed", msg, "error");
+    hideActionPopup(1600);
   } finally {
     refreshButtonState();
   }
@@ -560,6 +811,8 @@ function logout() {
 /* ========= INIT ========= */
 async function init() {
   if (!requireStaffSession()) return;
+
+  ensurePopup();
 
   const allowed = await checkPortalAccess();
   if (!allowed) return;
