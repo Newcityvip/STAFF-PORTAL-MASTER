@@ -86,6 +86,9 @@ function getAdminLoginId() {
   );
 }
 
+/* =========================
+   FIXED UPLOAD LOGIC ONLY
+   ========================= */
 async function uploadCsv() {
   const uploadMonth = uploadMonthInput?.value?.trim() || "";
   const uploadedBy = uploadedByInput?.value?.trim() || "ADMIN";
@@ -108,21 +111,64 @@ async function uploadCsv() {
   try {
     const csvText = await readFileAsText(file);
 
-    resultBox.textContent = "Sending to backend...";
+    resultBox.textContent = "Sending to backend... please wait.";
 
-    const data = await postJson({
-      action: "importScheduleCsv",
-      upload_month: uploadMonth,
-      uploaded_by: uploadedBy,
-      file_name: file.name,
-      csv_text: csvText
-    });
+    let data = null;
+    let uploadError = null;
 
-    resultBox.textContent = JSON.stringify(data, null, 2);
-
-    if (data?.ok) {
-      await refreshPerformanceArea();
+    try {
+      data = await postJson({
+        action: "importScheduleCsv",
+        upload_month: uploadMonth,
+        uploaded_by: uploadedBy,
+        file_name: file.name,
+        csv_text: csvText
+      });
+    } catch (err) {
+      uploadError = err;
     }
+
+    // Normal success
+    if (data?.ok) {
+      resultBox.textContent = JSON.stringify(data, null, 2);
+      await refreshPerformanceArea();
+      return;
+    }
+
+    // If failed / timed out / 524 / invalid JSON, verify whether upload actually saved
+    resultBox.textContent = "Upload response timed out or returned error.\nChecking whether data was still saved...";
+
+    try {
+      const verify = await postJson({
+        action: "verifyLastScheduleUpload",
+        upload_month: uploadMonth,
+        file_name: file.name
+      });
+
+      if (verify?.ok && Number(verify?.saved_rows || 0) > 0) {
+        resultBox.textContent = JSON.stringify({
+          ok: true,
+          message: "Upload completed successfully (original request timed out, but rows were saved).",
+          upload_month: verify.upload_month || uploadMonth,
+          file_name: verify.file_name || file.name,
+          batch_id: verify.batch_id || "",
+          saved_rows: verify.saved_rows || 0
+        }, null, 2);
+
+        await refreshPerformanceArea();
+        return;
+      }
+    } catch (verifyErr) {
+      // ignore verify fail, show original fail below
+    }
+
+    // If original response had JSON error object
+    if (data) {
+      resultBox.textContent = JSON.stringify(data, null, 2);
+    } else {
+      resultBox.textContent = "ERROR:\n" + (uploadError?.message || "Upload failed");
+    }
+
   } catch (err) {
     resultBox.textContent = "ERROR:\n" + (err?.message || err);
   } finally {
