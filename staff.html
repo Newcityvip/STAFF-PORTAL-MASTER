@@ -8,7 +8,7 @@
 </head>
 <body>
   <div class="page">
-    <div class="card dashboard-card">
+    <div class="card">
       <div class="header-row">
         <div>
           <h1>Staff Portal</h1>
@@ -20,49 +20,49 @@
         </div>
       </div>
 
-      <div id="accessBanner" class="mini-access-banner">Checking office access...</div>
+      <div class="access-banner" id="accessBanner">Checking office access...</div>
 
-      <div class="summary-grid">
-        <div class="summary-box">
-          <span class="summary-label">Staff Name</span>
-          <strong id="staffName">-</strong>
+      <div class="grid-4 top-staff-grid">
+        <div class="mini-card">
+          <div class="mini-label">Staff Name</div>
+          <div class="mini-value" id="staffName">-</div>
         </div>
-        <div class="summary-box">
-          <span class="summary-label">Login ID</span>
-          <strong id="staffLoginIdView">-</strong>
+        <div class="mini-card">
+          <div class="mini-label">Login ID</div>
+          <div class="mini-value" id="staffLoginIdView">-</div>
         </div>
-        <div class="summary-box">
-          <span class="summary-label">Team</span>
-          <strong id="staffTeam">-</strong>
+        <div class="mini-card">
+          <div class="mini-label">Team</div>
+          <div class="mini-value" id="staffTeam">-</div>
         </div>
-        <div class="summary-box">
-          <span class="summary-label">Role</span>
-          <strong id="staffRole">-</strong>
+        <div class="mini-card">
+          <div class="mini-label">Role</div>
+          <div class="mini-value" id="staffRole">-</div>
         </div>
       </div>
 
-      <div class="panel shift-panel">
+      <div class="panel">
         <div class="panel-title-row">
           <h3>Today Shift</h3>
-          <span class="mini-pill" id="shiftStatusPill">Loading...</span>
+          <span class="mini-pill" id="shiftStatusPill">-</span>
         </div>
 
-        <div class="summary-grid">
-          <div class="summary-box">
-            <span class="summary-label">Date</span>
-            <strong id="shiftDate">-</strong>
+        <div class="grid-4">
+          <div class="mini-card">
+            <div class="mini-label">Date</div>
+            <div class="mini-value" id="shiftDate">-</div>
           </div>
-          <div class="summary-box">
-            <span class="summary-label">Shift Code</span>
-            <strong id="shiftCode">-</strong>
+          <div class="mini-card">
+            <div class="mini-label">Shift Code</div>
+            <div class="mini-value" id="shiftCode">-</div>
           </div>
-          <div class="summary-box">
-            <span class="summary-label">Start Time</span>
-            <strong id="shiftStart">-</strong>
+          <div class="mini-card">
+            <div class="mini-label">Start Time</div>
+            <div class="mini-value" id="shiftStart">-</div>
           </div>
-          <div class="summary-box">
-            <span class="summary-label">End Time</span>
-            <strong id="shiftEnd">-</strong>
+          <div class="mini-card">
+            <div class="mini-label">End Time</div>
+            <div class="mini-value" id="shiftEnd">-</div>
           </div>
         </div>
       </div>
@@ -73,40 +73,40 @@
           <span class="mini-pill" id="liveScoreMonth">Live</span>
         </div>
 
-        <div class="summary-grid">
-          <div class="summary-box">
-            <span class="summary-label">Attendance Score</span>
-            <strong id="attendanceScore">-</strong>
+        <div class="grid-4">
+          <div class="mini-card">
+            <div class="mini-label">Attendance Score</div>
+            <div class="mini-value" id="attendanceScore">-</div>
           </div>
-          <div class="summary-box">
-            <span class="summary-label">KPI Score</span>
-            <strong id="kpiScore">-</strong>
+          <div class="mini-card">
+            <div class="mini-label">KPI Score</div>
+            <div class="mini-value" id="kpiScore">-</div>
           </div>
-          <div class="summary-box">
-            <span class="summary-label">Final Score</span>
-            <strong id="finalScore">-</strong>
+          <div class="mini-card">
+            <div class="mini-label">Final Score</div>
+            <div class="mini-value" id="finalScore">-</div>
           </div>
-          <div class="summary-box">
-            <span class="summary-label">Rating</span>
-            <strong id="ratingLabel">-</strong>
+          <div class="mini-card">
+            <div class="mini-label">Rating</div>
+            <div class="mini-value" id="ratingLabel">-</div>
           </div>
         </div>
 
         <div class="help" id="scoreNote">Attendance 40% + KPI 60% = Final Score</div>
       </div>
 
-      <div class="action-grid">
+      <div class="actions split-actions">
         <button id="checkInBtn">Check In</button>
-        <button id="checkOutBtn" class="btn-dark">Check Out</button>
+        <button id="checkOutBtn" class="secondary-btn">Check Out</button>
       </div>
 
       <div class="panel">
         <div class="panel-title-row">
           <h3>Break Actions</h3>
-          <span class="mini-pill mini-pill-muted" id="breakState">Ready</span>
+          <span class="mini-pill" id="breakState">Ready</span>
         </div>
 
-        <div class="form-grid">
+        <div class="grid-2">
           <div class="field">
             <label for="breakTypeSelect">Break Type</label>
             <select id="breakTypeSelect">
@@ -122,77 +122,65 @@
           </div>
         </div>
 
-        <div class="break-actions">
-          <button id="breakStartBtn" type="button">Start Break</button>
-          <button id="breakEndBtn" type="button" class="btn-dark">End Break</button>
+        <div class="actions split-actions">
+          <button id="breakStartBtn">Start Break</button>
+          <button id="breakEndBtn" class="secondary-btn">End Break</button>
         </div>
       </div>
 
       <div class="panel">
         <div class="panel-title-row">
           <h3>Today Attendance</h3>
-          <span class="mini-pill mini-pill-muted" id="attendanceState">Waiting...</span>
+          <span class="mini-pill" id="attendanceState">-</span>
         </div>
 
-        <div class="summary-grid">
-          <div class="summary-box">
-            <span class="summary-label">Check In</span>
-            <strong id="todayCheckIn">-</strong>
+        <div class="grid-4">
+          <div class="mini-card">
+            <div class="mini-label">Check In</div>
+            <div class="mini-value" id="todayCheckIn">-</div>
           </div>
-          <div class="summary-box">
-            <span class="summary-label">Check Out</span>
-            <strong id="todayCheckOut">-</strong>
+          <div class="mini-card">
+            <div class="mini-label">Check Out</div>
+            <div class="mini-value" id="todayCheckOut">-</div>
           </div>
-          <div class="summary-box">
-            <span class="summary-label">Status</span>
-            <strong id="todayStatus">-</strong>
+          <div class="mini-card">
+            <div class="mini-label">Status</div>
+            <div class="mini-value" id="todayStatus">-</div>
           </div>
-          <div class="summary-box">
-            <span class="summary-label">Late Minutes</span>
-            <strong id="todayLateMinutes">-</strong>
+          <div class="mini-card">
+            <div class="mini-label">Late Minutes</div>
+            <div class="mini-value" id="todayLateMinutes">-</div>
           </div>
         </div>
 
-        <pre id="attendanceBox">Loading attendance status...</pre>
+        <pre id="attendanceBox">No attendance action found for today.</pre>
       </div>
 
       <div class="panel">
         <div class="panel-title-row">
           <h3>Staff Score Board</h3>
-          <span class="mini-pill mini-pill-muted" id="scoreboardMonthTag">Loading...</span>
+          <span class="mini-pill" id="scoreboardMonthTag">Live</span>
         </div>
 
         <div class="scoreboard-grid">
-          <div class="panel" style="margin:0">
-            <div class="panel-title-row">
-              <h3>My Full Score Details</h3>
+          <div class="score-detail-card">
+            <h4>My Full Score Details</h4>
+            <div id="myScoreBox" class="score-detail-render">
+              Loading score details...
             </div>
-            <pre id="myScoreBox">Loading my score...</pre>
           </div>
 
-          <div class="panel" style="margin:0">
-            <div class="panel-title-row">
-              <h3>Other Staff Final Scores</h3>
-            </div>
-            <div class="score-list" id="otherStaffScores">
-              <div class="score-row">
-                <div class="score-row-left">
-                  <div class="score-row-name">Loading...</div>
-                  <div class="score-row-sub">Please wait</div>
-                </div>
-                <div class="score-row-right">
-                  <span class="final-score-chip">-</span>
-                </div>
-              </div>
+          <div class="score-detail-card">
+            <h4>Other Staff Final Scores</h4>
+            <div id="otherStaffScores" class="other-score-list">
+              Loading scoreboard...
             </div>
           </div>
         </div>
       </div>
 
       <div class="panel">
-        <div class="panel-title-row">
-          <h3>Latest Action Result</h3>
-        </div>
+        <h3>Latest Action Result</h3>
         <pre id="resultBox">No action yet.</pre>
       </div>
     </div>
