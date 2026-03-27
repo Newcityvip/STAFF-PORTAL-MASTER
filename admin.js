@@ -55,7 +55,12 @@ function readFileAsText(file) {
 
 async function getJson(url) {
   const res = await fetch(url);
-  return res.json();
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error(text || `HTTP ${res.status}`);
+  }
 }
 
 async function postJson(payload) {
@@ -693,7 +698,7 @@ function renderPreview(item) {
 function getSelectedDashboardItem() {
   const staffId = document.getElementById("kpiStaffSelect")?.value || "";
   if (!staffId) return null;
-  return dashboardData.find(item => String(item.staff_id) === String(currentStaffId)) || null;
+  return dashboardData.find(item => String(item.staff_id) === String(staffId)) || null;
 }
 
 function loadSelectedStaffIntoForm() {
