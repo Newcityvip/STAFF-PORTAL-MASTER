@@ -1,4 +1,4 @@
-const API_BASE = "https://staff-portal-proxy.mdrobiulislam.workers.dev";
+const API_BASE = "https://staff-portal-proxy.mdrobiulislam.workers.dev/";
 
 /* ========= ELEMENT HELPERS ========= */
 function el(...ids) {
