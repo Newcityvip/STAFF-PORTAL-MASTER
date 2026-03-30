@@ -189,7 +189,7 @@ adminBtn.onclick = async ()=>{
       return;
     }
 
-    localStorage.setItem("staffPortalAdmin", JSON.stringify({id}));
+    localStorage.setItem("staffPortalAdmin", JSON.stringify({ login_id: id }));
     adminStatus.textContent = "Success → opening...";
     window.location = "admin.html";
 
