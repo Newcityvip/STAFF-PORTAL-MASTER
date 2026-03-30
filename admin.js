@@ -508,321 +508,251 @@ function ensurePerformanceUi() {
             </div>
             <div class="field">
               <label for="kpiPenalty">Penalty</label>
-              <input type="number" id="kpiPenalty" min="0" step="0.1" value="0" />
-            </div>
-            <div class="field">
-              <label for="kpiMonthInput">KPI Month</label>
-              <input type="month" id="kpiMonthInput" />
+              <input type="number" id="kpiPenalty" min="0" max="5" step="0.1" value="0" />
             </div>
           </div>
 
-          <div class="row-actions admin-section">
-            <button type="button" class="small-btn save-btn" id="saveKpiBtn">Save KPI</button>
-            <button type="button" class="small-btn ghost-btn" id="loadSelectedKpiBtn">Load Selected</button>
-            <button type="button" class="small-btn secondary-btn" id="resetKpiBtn">Reset Form</button>
+          <div class="actions" style="margin-top:16px">
+            <button type="button" id="saveKpiBtn">Save KPI</button>
           </div>
 
-          <div class="mini-note">
-            Attendance score = 40%, KPI score = 60%, final score shown out of 5.
-          </div>
-
-          <div class="panel admin-section" style="margin-bottom:0">
-            <div class="panel-title-row">
-              <h3>Selected Staff Preview</h3>
-            </div>
-            <pre id="kpiPreviewBox">Select a staff to view score details.</pre>
-          </div>
+          <pre id="kpiResultBox">Waiting for KPI action...</pre>
         </div>
       </div>
     </div>
   `;
 
   page.appendChild(wrap);
-
-  document.getElementById("refreshDashboardBtn")?.addEventListener("click", refreshPerformanceArea);
-  document.getElementById("saveKpiBtn")?.addEventListener("click", saveKpiForm);
-  document.getElementById("resetKpiBtn")?.addEventListener("click", resetKpiForm);
-  document.getElementById("loadSelectedKpiBtn")?.addEventListener("click", loadSelectedStaffIntoForm);
-  document.getElementById("kpiStaffSelect")?.addEventListener("change", loadSelectedStaffIntoForm);
-  document.getElementById("staffSearchInput")?.addEventListener("input", renderLeaderboardTable);
 }
 
-function getMonthValue() {
-  return (
-    document.getElementById("dashboardMonth")?.value?.trim() ||
-    uploadMonthInput?.value?.trim() ||
-    new Date().toISOString().slice(0, 7)
-  );
-}
-
-function setMonthDefaults() {
-  const fallbackMonth = uploadMonthInput?.value?.trim() || new Date().toISOString().slice(0, 7);
-  const dashboardMonthInput = document.getElementById("dashboardMonth");
-  const kpiMonthInput = document.getElementById("kpiMonthInput");
-
-  if (dashboardMonthInput && !dashboardMonthInput.value) dashboardMonthInput.value = fallbackMonth;
-  if (kpiMonthInput && !kpiMonthInput.value) kpiMonthInput.value = fallbackMonth;
-}
-
-function renderSummaryCards(data) {
-  const staffCount = data.length;
-  const attendanceAvg = staffCount ? data.reduce((a, x) => a + toNum(x.attendance_score), 0) / staffCount : 0;
-  const kpiAvg = staffCount ? data.reduce((a, x) => a + toNum(x.kpi_score), 0) / staffCount : 0;
-  const finalAvg = staffCount ? data.reduce((a, x) => a + toNum(x.final_score), 0) / staffCount : 0;
-
-  const ids = {
-    sumStaffCount: staffCount,
-    sumAttendanceAvg: fmtScore(attendanceAvg),
-    sumKpiAvg: fmtScore(kpiAvg),
-    sumFinalAvg: fmtScore(finalAvg)
-  };
-
-  Object.keys(ids).forEach(id => {
-    const node = document.getElementById(id);
-    if (node) node.textContent = ids[id];
-  });
-}
-
-function buildRowActionButtons(item) {
-  return `
-    <button type="button" class="small-btn ghost-btn pick-staff-btn" data-staff-id="${escapeHtml(item.staff_id)}">Use</button>
-  `;
-}
-
-function renderLeaderboardTable() {
-  const tbody = document.getElementById("leaderboardBody");
-  const searchValue = String(document.getElementById("staffSearchInput")?.value || "").trim().toLowerCase();
-
-  if (!tbody) return;
-
-  const filtered = dashboardData.filter(item => {
-    if (!searchValue) return true;
-    return [
-      item.full_name,
-      item.login_id,
-      item.team,
-      item.staff_id,
-      item.role
-    ].join(" ").toLowerCase().includes(searchValue);
-  });
-
-  if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="8">No matching staff found.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = filtered.map(item => `
-    <tr>
-      <td>${item.rank || "-"}</td>
-      <td>
-        <div class="leader-name">${escapeHtml(item.full_name || "-")}</div>
-        <div class="leader-sub">${escapeHtml(item.login_id || item.staff_id || "-")}</div>
-      </td>
-      <td>${escapeHtml(item.team || "-")}</td>
-      <td>${fmtScore(item.attendance_score)}</td>
-      <td>${fmtScore(item.kpi_score)}</td>
-      <td><strong>${fmtScore(item.final_score)}</strong></td>
-      <td><span class="rating-chip ${getRatingClass(item.rating_label)}">${escapeHtml(item.rating_label || "-")}</span></td>
-      <td>${buildRowActionButtons(item)}</td>
-    </tr>
-  `).join("");
-
-  tbody.querySelectorAll(".pick-staff-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const select = document.getElementById("kpiStaffSelect");
-      if (!select) return;
-      select.value = btn.dataset.staffId || "";
-      loadSelectedStaffIntoForm();
-      window.scrollTo({ top: document.body.scrollHeight * 0.4, behavior: "smooth" });
-    });
-  });
-}
-
-function fillStaffSelect(data) {
-  const select = document.getElementById("kpiStaffSelect");
-  if (!select) return;
-
-  const current = select.value;
-  const options = data.map(item => {
-    const text = `${item.full_name || "-"} | ${item.team || "-"} | ${item.login_id || item.staff_id || "-"}`;
-    return `<option value="${escapeHtml(item.staff_id)}">${escapeHtml(text)}</option>`;
-  }).join("");
-
-  select.innerHTML = `<option value="">Select staff</option>${options}`;
-
-  if (current && data.some(x => String(x.staff_id) === String(current))) {
-    select.value = current;
-  }
-}
-
-function setInputValue(id, value) {
-  const node = document.getElementById(id);
-  if (node) node.value = value == null ? "" : String(value);
-}
-
-function resetKpiForm() {
-  setInputValue("kpiLeadership", 0);
-  setInputValue("kpiEffectiveness", 0);
-  setInputValue("kpiProblemSolving", 0);
-  setInputValue("kpiCommunication", 0);
-  setInputValue("kpiProductivity", 0);
-  setInputValue("kpiInitiative", 0);
-  setInputValue("kpiPenalty", 0);
-  const preview = document.getElementById("kpiPreviewBox");
-  if (preview) preview.textContent = "Select a staff to view score details.";
-}
-
-function fillKpiFormFromItem(item) {
-  const details = item?.kpi_details || {};
-  setInputValue("kpiLeadership", details.L_Leadership ?? details.leadership ?? 0);
-  setInputValue("kpiEffectiveness", details.E_Effectiveness ?? details.effectiveness ?? 0);
-  setInputValue("kpiProblemSolving", details.P_ProblemSolving ?? details.problem_solving ?? 0);
-  setInputValue("kpiCommunication", details.C_Communication ?? details.communication ?? 0);
-  setInputValue("kpiProductivity", details.PR_Productivity ?? details.productivity ?? 0);
-  setInputValue("kpiInitiative", details.I_Initiative ?? details.initiative ?? 0);
-  setInputValue("kpiPenalty", details.Penalty ?? details.penalty ?? 0);
-}
-
-function renderPreview(item) {
-  const preview = document.getElementById("kpiPreviewBox");
-  if (!preview) return;
-
-  if (!item) {
-    preview.textContent = "Selected staff not found in current dashboard.";
-    return;
-  }
-
-  preview.textContent = JSON.stringify({
-    staff_id: item.staff_id,
-    full_name: item.full_name,
-    login_id: item.login_id,
-    team: item.team,
-    attendance_score: item.attendance_score,
-    kpi_score: item.kpi_score,
-    final_score: item.final_score,
-    rating_label: item.rating_label,
-    attendance_details: item.attendance_details,
-    kpi_details: item.kpi_details
-  }, null, 2);
-}
-
-function getSelectedDashboardItem() {
-  const staffId = document.getElementById("kpiStaffSelect")?.value || "";
-  if (!staffId) return null;
-  return dashboardData.find(item => String(item.staff_id) === String(staffId)) || null;
-}
-
-function loadSelectedStaffIntoForm() {
-  const item = getSelectedDashboardItem();
-  fillKpiFormFromItem(item);
-  renderPreview(item);
+function getCurrentMonthValue() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
 }
 
 async function refreshPerformanceArea() {
-  ensurePerformanceUi();
-  setMonthDefaults();
+  if (!document.getElementById("performanceWrap")) return;
+  await loadDashboardData();
+}
 
-  const month = getMonthValue();
-  dashboardMonth = month;
+async function loadDashboardData() {
+  const monthInput = document.getElementById("dashboardMonth");
+  const leaderboardMonthTag = document.getElementById("leaderboardMonthTag");
+  const leaderboardBody = document.getElementById("leaderboardBody");
+  const kpiStaffSelect = document.getElementById("kpiStaffSelect");
 
-  const monthTag = document.getElementById("leaderboardMonthTag");
-  const body = document.getElementById("leaderboardBody");
-  if (monthTag) monthTag.textContent = month || "-";
-  if (body) body.innerHTML = `<tr><td colspan="8">Loading dashboard...</td></tr>`;
+  dashboardMonth = monthInput?.value?.trim() || getCurrentMonthValue();
+  if (monthInput) monthInput.value = dashboardMonth;
+  if (leaderboardMonthTag) leaderboardMonthTag.textContent = dashboardMonth;
+
+  if (leaderboardBody) {
+    leaderboardBody.innerHTML = `<tr><td colspan="8">Loading...</td></tr>`;
+  }
 
   try {
-    const data = await getJson(`${API_BASE}?action=adminKpiDashboard&month=${encodeURIComponent(month)}`);
-    if (!data?.ok) {
-      throw new Error(data?.error || "Failed to load admin KPI dashboard");
-    }
+    const data = await getJson(`${API_BASE}?action=adminPerformanceDashboard&month=${encodeURIComponent(dashboardMonth)}`);
+    dashboardData = Array.isArray(data?.rows) ? data.rows : [];
 
-    dashboardData = Array.isArray(data.data) ? data.data : [];
-    renderSummaryCards(dashboardData);
-    fillStaffSelect(dashboardData);
-    renderLeaderboardTable();
+    renderTopSummary(dashboardData);
+    renderLeaderboard(dashboardData);
+    renderKpiStaffOptions(dashboardData);
 
-    const currentSelected = getSelectedDashboardItem();
-    if (currentSelected) {
-      fillKpiFormFromItem(currentSelected);
-      renderPreview(currentSelected);
-    }
   } catch (err) {
-    dashboardData = [];
-    renderSummaryCards([]);
-    if (body) body.innerHTML = `<tr><td colspan="8">ERROR: ${escapeHtml(err?.message || err)}</td></tr>`;
+    if (leaderboardBody) {
+      leaderboardBody.innerHTML = `<tr><td colspan="8">Failed to load dashboard</td></tr>`;
+    }
   }
 }
 
-function getKpiPayload() {
-  return {
-    action: "saveKpiScore",
-    staff_id: document.getElementById("kpiStaffSelect")?.value || "",
-    month: document.getElementById("kpiMonthInput")?.value?.trim() || dashboardMonth || getMonthValue(),
-    L_Leadership: document.getElementById("kpiLeadership")?.value || 0,
-    E_Effectiveness: document.getElementById("kpiEffectiveness")?.value || 0,
-    P_ProblemSolving: document.getElementById("kpiProblemSolving")?.value || 0,
-    C_Communication: document.getElementById("kpiCommunication")?.value || 0,
-    PR_Productivity: document.getElementById("kpiProductivity")?.value || 0,
-    I_Initiative: document.getElementById("kpiInitiative")?.value || 0,
-    Penalty: document.getElementById("kpiPenalty")?.value || 0,
-    updated_by: getAdminLoginId(),
-    admin_login_id: getAdminLoginId()
+function renderTopSummary(rows) {
+  const staffCount = rows.length;
+  const attAvg = staffCount ? rows.reduce((s, r) => s + toNum(r.attendance_score), 0) / staffCount : 0;
+  const kpiAvg = staffCount ? rows.reduce((s, r) => s + toNum(r.kpi_score), 0) / staffCount : 0;
+  const finalAvg = staffCount ? rows.reduce((s, r) => s + toNum(r.final_score), 0) / staffCount : 0;
+
+  const el1 = document.getElementById("sumStaffCount");
+  const el2 = document.getElementById("sumAttendanceAvg");
+  const el3 = document.getElementById("sumKpiAvg");
+  const el4 = document.getElementById("sumFinalAvg");
+
+  if (el1) el1.textContent = String(staffCount);
+  if (el2) el2.textContent = fmtScore(attAvg);
+  if (el3) el3.textContent = fmtScore(kpiAvg);
+  if (el4) el4.textContent = fmtScore(finalAvg);
+}
+
+function renderLeaderboard(rows) {
+  const tbody = document.getElementById("leaderboardBody");
+  const searchValue = String(document.getElementById("staffSearchInput")?.value || "").toLowerCase().trim();
+
+  if (!tbody) return;
+
+  let filtered = [...rows];
+
+  if (searchValue) {
+    filtered = filtered.filter(r => {
+      return (
+        String(r.full_name || "").toLowerCase().includes(searchValue) ||
+        String(r.staff_id || "").toLowerCase().includes(searchValue) ||
+        String(r.login_id || "").toLowerCase().includes(searchValue) ||
+        String(r.team || "").toLowerCase().includes(searchValue)
+      );
+    });
+  }
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="8">No data found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((r, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>
+        <div class="leader-name">${escapeHtml(r.full_name || "-")}</div>
+        <div class="leader-sub">${escapeHtml(r.login_id || r.staff_id || "-")}</div>
+      </td>
+      <td>${escapeHtml(r.team || "-")}</td>
+      <td>${fmtScore(r.attendance_score)}</td>
+      <td>${fmtScore(r.kpi_score)}</td>
+      <td><strong>${fmtScore(r.final_score)}</strong></td>
+      <td><span class="rating-chip ${getRatingClass(r.rating_label)}">${escapeHtml(r.rating_label || "-")}</span></td>
+      <td>
+        <div class="row-actions">
+          <button class="small-btn ghost-btn" type="button" onclick="fillKpiForm('${escapeHtml(r.staff_id || "")}')">KPI</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function renderKpiStaffOptions(rows) {
+  const select = document.getElementById("kpiStaffSelect");
+  if (!select) return;
+
+  select.innerHTML = rows.map(r => `
+    <option value="${escapeHtml(r.staff_id || "")}">
+      ${escapeHtml(r.full_name || "-")} (${escapeHtml(r.login_id || r.staff_id || "-")})
+    </option>
+  `).join("");
+
+  if (rows.length) {
+    fillKpiForm(rows[0].staff_id);
+  }
+}
+
+function fillKpiForm(staffId) {
+  const row = dashboardData.find(r => String(r.staff_id || "") === String(staffId || ""));
+  if (!row) return;
+
+  const select = document.getElementById("kpiStaffSelect");
+  if (select) select.value = row.staff_id || "";
+
+  document.getElementById("kpiLeadership").value = toNum(row.L_Leadership || row.leadership || 0);
+  document.getElementById("kpiEffectiveness").value = toNum(row.E_Effectiveness || row.effectiveness || 0);
+  document.getElementById("kpiProblemSolving").value = toNum(row.P_ProblemSolving || row.problem_solving || 0);
+  document.getElementById("kpiCommunication").value = toNum(row.C_Communication || row.communication || 0);
+  document.getElementById("kpiProductivity").value = toNum(row.PR_Productivity || row.productivity || 0);
+  document.getElementById("kpiInitiative").value = toNum(row.I_Initiative || row.initiative || 0);
+  document.getElementById("kpiPenalty").value = toNum(row.Penalty || row.penalty || 0);
+}
+
+async function saveKpiData() {
+  const kpiResultBox = document.getElementById("kpiResultBox");
+  const staffId = document.getElementById("kpiStaffSelect")?.value?.trim() || "";
+
+  if (!staffId) {
+    if (kpiResultBox) kpiResultBox.textContent = "Please select a staff first.";
+    return;
+  }
+
+  const payload = {
+    action: "saveKpiEvaluation",
+    month: dashboardMonth || getCurrentMonthValue(),
+    staff_id: staffId,
+    L_Leadership: toNum(document.getElementById("kpiLeadership")?.value),
+    E_Effectiveness: toNum(document.getElementById("kpiEffectiveness")?.value),
+    P_ProblemSolving: toNum(document.getElementById("kpiProblemSolving")?.value),
+    C_Communication: toNum(document.getElementById("kpiCommunication")?.value),
+    PR_Productivity: toNum(document.getElementById("kpiProductivity")?.value),
+    I_Initiative: toNum(document.getElementById("kpiInitiative")?.value),
+    Penalty: toNum(document.getElementById("kpiPenalty")?.value),
+    updated_by: getAdminLoginId()
   };
-}
 
-async function saveKpiForm() {
-  const payload = getKpiPayload();
-  const preview = document.getElementById("kpiPreviewBox");
-
-  if (!payload.staff_id) {
-    alert("Please select staff first");
-    return;
+  if (kpiResultBox) {
+    kpiResultBox.textContent = "Saving KPI...";
   }
-
-  if (!payload.month) {
-    alert("Please select KPI month");
-    return;
-  }
-
-  if (preview) preview.textContent = "Saving KPI score...";
 
   try {
     const data = await postJson(payload);
-    if (!data?.ok) {
-      throw new Error(data?.error || "Failed to save KPI");
+    if (kpiResultBox) {
+      kpiResultBox.textContent = JSON.stringify(data, null, 2);
     }
-
-    if (preview) preview.textContent = JSON.stringify(data, null, 2);
-    resultBox.textContent = JSON.stringify(data, null, 2);
-
-    if (document.getElementById("dashboardMonth")) {
-      document.getElementById("dashboardMonth").value = payload.month;
-    }
-
-    await refreshPerformanceArea();
-
-    const select = document.getElementById("kpiStaffSelect");
-    if (select) {
-      select.value = payload.staff_id;
-      loadSelectedStaffIntoForm();
-    }
+    await loadDashboardData();
   } catch (err) {
-    const message = err?.message || String(err);
-    if (preview) preview.textContent = "ERROR:\n" + message;
-    resultBox.textContent = "ERROR:\n" + message;
+    if (kpiResultBox) {
+      kpiResultBox.textContent = "KPI save failed\n\n" + (err?.message || err);
+    }
   }
 }
 
-if (requireAdminSession()) {
-  uploadBtn?.addEventListener("click", uploadCsv);
-  adminLogoutBtn?.addEventListener("click", logoutAdmin);
-  checkApi();
-  ensurePerformanceUi();
-  setMonthDefaults();
-  refreshPerformanceArea();
+function bindPerformanceEvents() {
+  const refreshBtn = document.getElementById("refreshDashboardBtn");
+  const searchInput = document.getElementById("staffSearchInput");
+  const kpiStaffSelect = document.getElementById("kpiStaffSelect");
+  const saveKpiBtn = document.getElementById("saveKpiBtn");
+  const dashboardMonthInput = document.getElementById("dashboardMonth");
+
+  if (refreshBtn) {
+    refreshBtn.onclick = () => loadDashboardData();
+  }
+
+  if (searchInput) {
+    searchInput.oninput = () => renderLeaderboard(dashboardData);
+  }
+
+  if (kpiStaffSelect) {
+    kpiStaffSelect.onchange = () => fillKpiForm(kpiStaffSelect.value);
+  }
+
+  if (saveKpiBtn) {
+    saveKpiBtn.onclick = () => saveKpiData();
+  }
+
+  if (dashboardMonthInput) {
+    dashboardMonthInput.onchange = () => loadDashboardData();
+  }
 }
 
+function initAdminPage() {
+  if (!requireAdminSession()) return;
 
+  if (uploadedByInput) {
+    uploadedByInput.value = getAdminLoginId();
+  }
 
-bro this is my current admin.js means u are working without reading and following my current files??? 
-help to fix based on current one pls man  do not break or change anything else . just fix upload issue and related error display.  please think properly and help properly bro  this keep wasting my time.
+  if (uploadMonthInput && !uploadMonthInput.value) {
+    uploadMonthInput.value = getCurrentMonthValue();
+  }
+
+  checkApi();
+
+  if (uploadBtn) {
+    uploadBtn.onclick = uploadCsv;
+  }
+
+  if (adminLogoutBtn) {
+    adminLogoutBtn.onclick = logoutAdmin;
+  }
+
+  ensurePerformanceUi();
+  bindPerformanceEvents();
+  loadDashboardData();
+}
+
+window.fillKpiForm = fillKpiForm;
+
+document.addEventListener("DOMContentLoaded", initAdminPage);
