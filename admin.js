@@ -96,6 +96,43 @@ function isRealCsvFile(file) {
   const name = String(file.name || "").toLowerCase().trim();
   return name.endsWith(".csv") && !name.endsWith(".csv.xlsx") && !name.endsWith(".csv.xls");
 }
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function looksLikeTimeoutError(message) {
+  const msg = String(message || "").toLowerCase();
+  return (
+    msg.includes("524") ||
+    msg.includes("timeout") ||
+    msg.includes("timed out") ||
+    msg.includes("failed to fetch") ||
+    msg.includes("unexpected token") ||
+    msg.includes("error code")
+  );
+}
+
+async function pollUploadVerification(uploadMonth, fileName, maxTry = 20, waitMs = 3000) {
+  for (let i = 0; i < maxTry; i++) {
+    try {
+      const verifyData = await postJson({
+        action: "verifyLastScheduleUpload",
+        upload_month: uploadMonth,
+        file_name: fileName
+      });
+
+      if (verifyData?.ok && Number(verifyData?.saved_rows || 0) > 0) {
+        return verifyData;
+      }
+    } catch (err) {
+      // ignore and retry
+    }
+
+    await sleep(waitMs);
+  }
+
+  return null;
+}
 
 async function uploadCsv() {
   const uploadMonth = uploadMonthInput?.value?.trim() || "";
@@ -154,41 +191,27 @@ async function uploadCsv() {
 
     const combinedErrMsg = (uploadErrMsg + " " + uploadDataErrMsg).toLowerCase();
 
-    const shouldVerify =
-      !uploadData ||
-      combinedErrMsg.includes("524") ||
-      combinedErrMsg.includes("timeout") ||
-      combinedErrMsg.includes("timed out") ||
-      combinedErrMsg.includes("the operation was canceled") ||
-      combinedErrMsg.includes("failed to fetch");
+    if (!uploadData || looksLikeTimeoutError(combinedErrMsg)) {
+      resultBox.textContent =
+        "Upload timed out or returned no final response.\n" +
+        "Checking whether rows were still saved...";
 
-    if (shouldVerify) {
-      resultBox.textContent = "Upload timed out or returned no final response.\nChecking whether rows were still saved...";
+      const verifyData = await pollUploadVerification(uploadMonth, file.name, 20, 3000);
 
-      try {
-        const verifyData = await postJson({
-          action: "verifyLastScheduleUpload",
-          upload_month: uploadMonth,
-          file_name: file.name
-        });
+      if (verifyData?.ok && Number(verifyData?.saved_rows || 0) > 0) {
+        resultBox.textContent =
+          "✅ Upload completed successfully after timeout check\n\n" +
+          JSON.stringify({
+            ok: true,
+            message: "Upload completed successfully after timeout check.",
+            upload_month: verifyData.upload_month || uploadMonth,
+            file_name: verifyData.file_name || file.name,
+            batch_id: verifyData.batch_id || "",
+            saved_rows: verifyData.saved_rows || 0
+          }, null, 2);
 
-        if (verifyData?.ok && Number(verifyData?.saved_rows || 0) > 0) {
-          resultBox.textContent =
-            "✅ Upload completed successfully\n\n" +
-            JSON.stringify({
-              ok: true,
-              message: "Upload completed successfully after timeout check.",
-              upload_month: verifyData.upload_month || uploadMonth,
-              file_name: verifyData.file_name || file.name,
-              batch_id: verifyData.batch_id || "",
-              saved_rows: verifyData.saved_rows || 0
-            }, null, 2);
-
-          await refreshPerformanceArea();
-          return;
-        }
-      } catch (verifyErr) {
-        // continue
+        await refreshPerformanceArea();
+        return;
       }
     }
 
