@@ -146,13 +146,21 @@ async function uploadCsv() {
     }
 
     const uploadErrMsg = String(uploadErr?.message || "");
+    const uploadDataErrMsg =
+      String(uploadData?.error || "") + " " +
+      String(uploadData?.message || "") + " " +
+      String(uploadData?.status || "") + " " +
+      String(uploadData?.http_code || "");
+
+    const combinedErrMsg = (uploadErrMsg + " " + uploadDataErrMsg).toLowerCase();
+
     const shouldVerify =
       !uploadData ||
-      uploadErrMsg.includes("524") ||
-      uploadErrMsg.includes("timeout") ||
-      uploadErrMsg.includes("timed out") ||
-      uploadErrMsg.includes("The operation was canceled") ||
-      uploadErrMsg.includes("Failed to fetch");
+      combinedErrMsg.includes("524") ||
+      combinedErrMsg.includes("timeout") ||
+      combinedErrMsg.includes("timed out") ||
+      combinedErrMsg.includes("the operation was canceled") ||
+      combinedErrMsg.includes("failed to fetch");
 
     if (shouldVerify) {
       resultBox.textContent = "Upload timed out or returned no final response.\nChecking whether rows were still saved...";
@@ -180,12 +188,15 @@ async function uploadCsv() {
           return;
         }
       } catch (verifyErr) {
-        // ignore and continue
+        // continue
       }
     }
 
     if (uploadData) {
-      resultBox.textContent = "❌ Upload failed\n\n" + JSON.stringify(uploadData, null, 2);
+      resultBox.textContent =
+        "❌ Upload failed\n\n" +
+        JSON.stringify(uploadData, null, 2) +
+        "\n\nIf this shows error code 524, the request timed out before the final response came back.";
     } else {
       resultBox.textContent = "❌ Upload failed\n\n" + (uploadErr?.message || "Upload failed");
     }
@@ -810,3 +821,8 @@ if (requireAdminSession()) {
   setMonthDefaults();
   refreshPerformanceArea();
 }
+
+
+
+bro this is my current admin.js means u are working without reading and following my current files??? 
+help to fix based on current one pls man  do not break or change anything else . just fix upload issue and related error display.  please think properly and help properly bro  this keep wasting my time.
