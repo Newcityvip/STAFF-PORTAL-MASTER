@@ -14,11 +14,11 @@ const logoutBtn = el("logoutBtn");
 const checkInBtn = el("checkInBtn");
 const checkOutBtn = el("checkOutBtn");
 
-const breakTypeSelect = el("breakTypeSelect");
-const breakRemarkInput = el("breakRemarkInput");
+const breakTypeSelect = el("breakTypeSelect", "breakType");
+const breakRemarkInput = el("breakRemarkInput", "breakRemark");
 const breakStartBtn = el("breakStartBtn");
 const breakEndBtn = el("breakEndBtn");
-const breakState = el("breakState");
+const breakState = el("breakState", "breakStatusPill");
 
 const resultBox = el("resultMessage", "resultBox");
 const attendanceBox = el("attendanceMessage", "attendanceBox");
