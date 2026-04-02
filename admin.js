@@ -11,6 +11,92 @@ const uploadedByInput = document.getElementById("uploadedBy");
 let adminSession = null;
 let dashboardMonth = "";
 let dashboardData = [];
+let dashboardRefreshPromise = null;
+
+let selectedQuarterAnchorMonth = "";
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+function normalizeMonthValue(value) {
+  const s = String(value || "").trim();
+  const m = s.match(/^(\d{4})-(\d{2})$/);
+  return m ? `${m[1]}-${m[2]}` : "";
+}
+
+function getQuarterInfoFromMonth(monthValue) {
+  const normalized = normalizeMonthValue(monthValue);
+  const now = new Date();
+  let year = now.getFullYear();
+  let month = now.getMonth() + 1;
+
+  if (normalized) {
+    const parts = normalized.split("-");
+    year = Number(parts[0]);
+    month = Number(parts[1]);
+  }
+
+  if (month === 12 || month === 1 || month === 2) {
+    return { label: `Q1 ${year}`, anchorMonth: `${year}-01` };
+  }
+  if (month >= 3 && month <= 5) {
+    return { label: `Q2 ${year}`, anchorMonth: `${year}-03` };
+  }
+  if (month >= 6 && month <= 8) {
+    return { label: `Q3 ${year}`, anchorMonth: `${year}-06` };
+  }
+  return { label: `Q4 ${year}`, anchorMonth: `${year}-09` };
+}
+
+function addMonthsToYmd(monthValue, delta) {
+  const normalized = normalizeMonthValue(monthValue) || new Date().toISOString().slice(0, 7);
+  let [y, m] = normalized.split("-").map(Number);
+  let total = (y * 12) + (m - 1) + Number(delta || 0);
+  const newYear = Math.floor(total / 12);
+  const newMonth = (total % 12) + 1;
+  return `${newYear}-${pad2(newMonth)}`;
+}
+
+function buildQuarterOptions(baseMonth, count = 8) {
+  const options = [];
+  const seen = new Set();
+  const base = normalizeMonthValue(baseMonth) || new Date().toISOString().slice(0, 7);
+
+  for (let i = 0; i < count * 3; i++) {
+    const month = addMonthsToYmd(base, -i);
+    const q = getQuarterInfoFromMonth(month);
+    if (!seen.has(q.label)) {
+      seen.add(q.label);
+      options.push(q);
+      if (options.length >= count) break;
+    }
+  }
+  return options;
+}
+
+function syncQuarterSelectFromMonth(monthValue) {
+  const quarterSelect = document.getElementById("dashboardQuarter");
+  if (!quarterSelect) return;
+  const q = getQuarterInfoFromMonth(monthValue);
+  quarterSelect.value = q.anchorMonth;
+  selectedQuarterAnchorMonth = q.anchorMonth;
+}
+
+function fillQuarterSelect(baseMonth) {
+  const quarterSelect = document.getElementById("dashboardQuarter");
+  if (!quarterSelect) return;
+
+  const options = buildQuarterOptions(baseMonth, 8);
+  quarterSelect.innerHTML = options.map(q =>
+    `<option value="${q.anchorMonth}">${q.label}</option>`
+  ).join("");
+
+  const current = getQuarterInfoFromMonth(baseMonth).anchorMonth;
+  quarterSelect.value = current;
+  selectedQuarterAnchorMonth = current;
+}
+
 
 function requireAdminSession() {
   const raw = localStorage.getItem("staffPortalAdmin");
@@ -448,8 +534,8 @@ function ensurePerformanceUi() {
 
       <div class="toolbar">
         <div class="field">
-          <label for="dashboardMonth">Score Month</label>
-          <input type="month" id="dashboardMonth" />
+          <label for="dashboardQuarter">Quarter</label>
+          <select id="dashboardQuarter"></select>
         </div>
         <div class="field">
           <button type="button" class="small-btn secondary-btn" id="refreshDashboardBtn">Refresh Dashboard</button>
@@ -470,7 +556,7 @@ function ensurePerformanceUi() {
       <div class="two-col admin-section">
         <div class="panel" style="margin:0">
           <div class="panel-title-row">
-            <h3>Monthly Leaderboard</h3>
+            <h3>Quarterly Leaderboard</h3>
             <span class="mini-pill" id="leaderboardMonthTag">-</span>
           </div>
           <div class="table-wrap">
@@ -546,7 +632,7 @@ function ensurePerformanceUi() {
           </div>
 
           <div class="mini-note">
-            Attendance score = 40%, KPI score = 60%, final score shown out of 5.
+            Attendance score = 40%, KPI score = 60%, final score shown out of 5 for the selected quarter.
           </div>
 
           <div class="panel admin-section" style="margin-bottom:0">
@@ -568,11 +654,21 @@ function ensurePerformanceUi() {
   document.getElementById("loadSelectedKpiBtn")?.addEventListener("click", loadSelectedStaffIntoForm);
   document.getElementById("kpiStaffSelect")?.addEventListener("change", loadSelectedStaffIntoForm);
   document.getElementById("staffSearchInput")?.addEventListener("input", renderLeaderboardTable);
+  document.getElementById("dashboardQuarter")?.addEventListener("change", () => {
+    const quarterValue = document.getElementById("dashboardQuarter")?.value?.trim() || "";
+    if (quarterValue) {
+      selectedQuarterAnchorMonth = quarterValue;
+      const kpiMonthInput = document.getElementById("kpiMonthInput");
+      if (kpiMonthInput) kpiMonthInput.value = quarterValue;
+      refreshPerformanceArea();
+    }
+  });
 }
 
 function getMonthValue() {
   return (
-    document.getElementById("dashboardMonth")?.value?.trim() ||
+    document.getElementById("dashboardQuarter")?.value?.trim() ||
+    selectedQuarterAnchorMonth ||
     uploadMonthInput?.value?.trim() ||
     new Date().toISOString().slice(0, 7)
   );
@@ -580,11 +676,14 @@ function getMonthValue() {
 
 function setMonthDefaults() {
   const fallbackMonth = uploadMonthInput?.value?.trim() || new Date().toISOString().slice(0, 7);
-  const dashboardMonthInput = document.getElementById("dashboardMonth");
   const kpiMonthInput = document.getElementById("kpiMonthInput");
 
-  if (dashboardMonthInput && !dashboardMonthInput.value) dashboardMonthInput.value = fallbackMonth;
-  if (kpiMonthInput && !kpiMonthInput.value) kpiMonthInput.value = fallbackMonth;
+  fillQuarterSelect(fallbackMonth);
+  syncQuarterSelectFromMonth(fallbackMonth);
+
+  if (kpiMonthInput && !kpiMonthInput.value) {
+    kpiMonthInput.value = getMonthValue();
+  }
 }
 
 function renderSummaryCards(data) {
@@ -742,6 +841,8 @@ function loadSelectedStaffIntoForm() {
 }
 
 async function refreshPerformanceArea() {
+  if (dashboardRefreshPromise) return dashboardRefreshPromise;
+
   ensurePerformanceUi();
   setMonthDefaults();
 
@@ -750,30 +851,36 @@ async function refreshPerformanceArea() {
 
   const monthTag = document.getElementById("leaderboardMonthTag");
   const body = document.getElementById("leaderboardBody");
-  if (monthTag) monthTag.textContent = month || "-";
+  if (monthTag) monthTag.textContent = getQuarterInfoFromMonth(month).label || "-";
   if (body) body.innerHTML = `<tr><td colspan="8">Loading dashboard...</td></tr>`;
 
-  try {
-    const data = await getJson(`${API_BASE}?action=adminKpiDashboard&month=${encodeURIComponent(month)}`);
-    if (!data?.ok) {
-      throw new Error(data?.error || "Failed to load admin KPI dashboard");
-    }
+  dashboardRefreshPromise = (async () => {
+    try {
+      const data = await getJson(`${API_BASE}?action=adminKpiDashboard&month=${encodeURIComponent(month)}`);
+      if (!data?.ok) {
+        throw new Error(data?.error || "Failed to load admin KPI dashboard");
+      }
 
-    dashboardData = Array.isArray(data.data) ? data.data : [];
-    renderSummaryCards(dashboardData);
-    fillStaffSelect(dashboardData);
-    renderLeaderboardTable();
+      dashboardData = Array.isArray(data.data) ? data.data : [];
+      renderSummaryCards(dashboardData);
+      fillStaffSelect(dashboardData);
+      renderLeaderboardTable();
 
-    const currentSelected = getSelectedDashboardItem();
-    if (currentSelected) {
-      fillKpiFormFromItem(currentSelected);
-      renderPreview(currentSelected);
+      const currentSelected = getSelectedDashboardItem();
+      if (currentSelected) {
+        fillKpiFormFromItem(currentSelected);
+        renderPreview(currentSelected);
+      }
+    } catch (err) {
+      dashboardData = [];
+      renderSummaryCards([]);
+      if (body) body.innerHTML = `<tr><td colspan="8">ERROR: ${escapeHtml(err?.message || err)}</td></tr>`;
+    } finally {
+      dashboardRefreshPromise = null;
     }
-  } catch (err) {
-    dashboardData = [];
-    renderSummaryCards([]);
-    if (body) body.innerHTML = `<tr><td colspan="8">ERROR: ${escapeHtml(err?.message || err)}</td></tr>`;
-  }
+  })();
+
+  return dashboardRefreshPromise;
 }
 
 function getKpiPayload() {
@@ -818,9 +925,7 @@ async function saveKpiForm() {
     if (preview) preview.textContent = JSON.stringify(data, null, 2);
     resultBox.textContent = JSON.stringify(data, null, 2);
 
-    if (document.getElementById("dashboardMonth")) {
-      document.getElementById("dashboardMonth").value = payload.month;
-    }
+    syncQuarterSelectFromMonth(payload.month);
 
     await refreshPerformanceArea();
 
@@ -842,5 +947,5 @@ if (requireAdminSession()) {
   checkApi();
   ensurePerformanceUi();
   setMonthDefaults();
-  refreshPerformanceArea();
+  setTimeout(() => { refreshPerformanceArea(); }, 0);
 }
