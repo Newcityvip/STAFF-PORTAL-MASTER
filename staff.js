@@ -815,11 +815,16 @@ function getDeviceInfo() {
 async function afterActionRefresh() {
   await Promise.allSettled([
     loadAttendance(),
-    loadPerformanceScore(),
-    loadStaffScoreboard(),
-    loadUpcomingSchedule()
+    loadPerformanceScore()
   ]);
   refreshButtonState();
+
+  setTimeout(() => {
+    Promise.allSettled([
+      loadStaffScoreboard(),
+      loadUpcomingSchedule()
+    ]);
+  }, 0);
 }
 
 async function handleBreakAction(mode) {
